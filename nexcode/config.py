@@ -30,7 +30,7 @@ import tomli_w
 
 DEFAULT_MODEL: str = "claude-opus-4-6"
 DEFAULT_PROVIDER: str = "anthropic"
-DEFAULT_MAX_TOKENS: int = 8096
+DEFAULT_MAX_TOKENS: int = 4000
 DEFAULT_THEME: str = "dark"
 DEFAULT_PERMISSION_MODE: str = "ask"
 DEFAULT_WORKSPACE_FILE: str = "NEXCODE.md"

@@ -76,7 +76,12 @@ class GitEngine:
     def _get_repo(self) -> Any:
         """Lazy-load the git.Repo object."""
         if self._repo is None:
-            import git
+            try:
+                import git
+            except ImportError:
+                raise GitError(
+                    "gitpython is not installed. Run: uv add gitpython"
+                )
             try:
                 self._repo = git.Repo(self._cwd, search_parent_directories=True)
             except git.InvalidGitRepositoryError:
@@ -94,7 +99,10 @@ class GitEngine:
 
     def init(self) -> bool:
         """Initialize a new git repository."""
-        import git
+        try:
+            import git
+        except ImportError:
+            raise GitError("gitpython is not installed. Run: uv add gitpython")
         try:
             self._repo = git.Repo.init(self._cwd)
             return True

@@ -1,3 +1,6 @@
+default_provider = "openrouter"
+default_model = "moonshotai/kimi-k2.5"
+max_tokens = 4000
+
 [api_keys]
-fake = "sk-123"
 openrouter = "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"
