@@ -50,8 +50,14 @@ class NexCodeApp:
         self._tool_registry = ToolRegistry()
         self._tool_registry.register_all()
 
-        # Placeholders for subsystems (implemented in later parts).
-        self._session_manager: Any = None
+        # Session Manager.
+        from nexcode.memory.session import SessionManager
+        self._session_manager = SessionManager(self.display.console)
+        self.current_session = self._session_manager.start(
+            project_path=str(self.workspace_root),
+            model=self.provider.current_model,
+            provider=self.provider.current_provider,
+        )
 
     # -- Lifecycle -----------------------------------------------------------
 
@@ -73,7 +79,8 @@ class NexCodeApp:
 
     def shutdown(self) -> None:
         """Graceful shutdown — save session if configured."""
-        if self.config.auto_save_session:
+        if self.config.auto_save_session and hasattr(self, "current_session"):
+            asyncio.run(self._session_manager.end(self.current_session, ai_provider=self.provider))
             self.display.system("Session saved.")
         self.display.system("Goodbye! 👋")
 

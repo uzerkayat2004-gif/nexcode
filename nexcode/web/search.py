@@ -255,7 +255,7 @@ class WebSearchEngine:
         import asyncio
 
         def _do_search(q: str, n: int) -> list[dict]:
-            from duckduckgo_search import DDGS
+            from ddgs import DDGS
             with DDGS() as ddgs:
                 return list(ddgs.text(q, max_results=n))
 
@@ -293,9 +293,9 @@ class WebSearchEngine:
         except ImportError:
             return [
                 SearchResult(
-                    title="duckduckgo-search not installed",
+                    title="ddgs not installed",
                     url="",
-                    snippet="Run: uv pip install duckduckgo-search",
+                    snippet="Run: uv pip install ddgs",
                 )
             ]
         except Exception as exc:
