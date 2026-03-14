@@ -17,6 +17,8 @@ from rich.panel import Panel
 from rich.rule import Rule
 from rich.text import Text
 
+from nexcode.utils.helpers import truncate
+
 
 class ThinkingDisplay:
     """
@@ -45,7 +47,7 @@ class ThinkingDisplay:
         body.append(f"🔧 {tool_name}\n", style="bold cyan")
 
         for key, value in parameters.items():
-            display_value = _truncate(str(value), 200)
+            display_value = truncate(str(value), 200, suffix="...")
             body.append(f"   {key}: ", style="dim")
             body.append(f'"{display_value}"\n', style="white")
 
@@ -75,7 +77,7 @@ class ThinkingDisplay:
 
         text = Text()
         text.append(f" {icon} ", style=style)
-        text.append(_truncate(str(display), 120), style=style)
+        text.append(truncate(str(display), 120, suffix="..."), style=style)
         if error:
             text.append(f"\n    Error: {error}", style="bright_red")
 
@@ -219,12 +221,3 @@ class ThinkingDisplay:
         self.console.print(table)
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _truncate(text: str, max_len: int) -> str:
-    """Truncate a string, adding ellipsis if needed."""
-    if len(text) <= max_len:
-        return text
-    return text[: max_len - 3] + "..."
