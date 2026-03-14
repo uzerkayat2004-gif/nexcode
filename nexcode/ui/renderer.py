@@ -19,6 +19,7 @@ from rich.table import Table
 from rich.text import Text
 
 from nexcode.ui.themes import Theme, THEMES
+from nexcode.utils.helpers import truncate
 
 
 class OutputRenderer:
@@ -64,7 +65,7 @@ class OutputRenderer:
         body.append(f"🔧 {tool_name}\n", style=f"bold {self.theme.tool_call}")
 
         for key, value in parameters.items():
-            display = _truncate(str(value), 200)
+            display = truncate(str(value), 200, suffix="...")
             body.append(f"   {key}:", style="dim")
             body.append(f'  "{display}"\n', style="white")
 
@@ -200,11 +201,3 @@ class OutputRenderer:
         self.console.print()
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _truncate(text: str, max_len: int) -> str:
-    if len(text) <= max_len:
-        return text
-    return text[:max_len - 3] + "..."
