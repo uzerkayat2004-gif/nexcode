@@ -171,8 +171,9 @@ class CodeReviewer:
         """Review a PR (requires gh CLI)."""
         import asyncio, subprocess
         try:
-            proc = await asyncio.create_subprocess_shell(
-                f"gh pr diff {pr_number}", stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            proc = await asyncio.create_subprocess_exec(
+                "gh", "pr", "diff", str(pr_number),
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             )
             stdout, _ = await proc.communicate()
             diff = stdout.decode(errors="replace")
