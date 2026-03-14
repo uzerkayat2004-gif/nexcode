@@ -9,11 +9,10 @@ supports atomic restore operations.
 
 from __future__ import annotations
 
-import hashlib
 import os
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -21,21 +20,21 @@ from rich.console import Console
 
 from nexcode.checkpoints.storage import CheckpointStorage
 
-
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class CheckpointFile:
     """A single file captured in a checkpoint."""
 
-    path: str                  # relative to project root
-    content_hash: str          # SHA256 of content
+    path: str  # relative to project root
+    content_hash: str  # SHA256 of content
     size_bytes: int = 0
     encoding: str = "utf-8"
     existed_before: bool = True
-    storage_key: str = ""      # same as content_hash
+    storage_key: str = ""  # same as content_hash
 
 
 @dataclass
@@ -43,7 +42,7 @@ class Checkpoint:
     """A saved checkpoint with one or more files."""
 
     id: str = ""
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     session_id: str = ""
     task_id: str | None = None
     tool_name: str = ""
@@ -77,6 +76,7 @@ class CleanupResult:
 # ---------------------------------------------------------------------------
 # CheckpointManager
 # ---------------------------------------------------------------------------
+
 
 class CheckpointManager:
     """
@@ -112,7 +112,7 @@ class CheckpointManager:
         if isinstance(paths, str):
             paths = [paths]
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         suffix = uuid.uuid4().hex[:4]
         cp_id = f"ckpt_{now.strftime('%Y%m%d_%H%M%S')}_{suffix}"
 
@@ -122,13 +122,15 @@ class CheckpointManager:
             abs_path = self._resolve(path)
             if not os.path.exists(abs_path):
                 # File doesn't exist yet — record that.
-                checkpoint_files.append(CheckpointFile(
-                    path=self._relative(abs_path),
-                    content_hash="",
-                    size_bytes=0,
-                    existed_before=False,
-                    storage_key="",
-                ))
+                checkpoint_files.append(
+                    CheckpointFile(
+                        path=self._relative(abs_path),
+                        content_hash="",
+                        size_bytes=0,
+                        existed_before=False,
+                        storage_key="",
+                    )
+                )
                 continue
 
             try:
@@ -140,14 +142,16 @@ class CheckpointManager:
                 continue
 
             content_hash = self.storage.store(content)
-            checkpoint_files.append(CheckpointFile(
-                path=self._relative(abs_path),
-                content_hash=content_hash,
-                size_bytes=len(content.encode("utf-8")),
-                encoding="utf-8",
-                existed_before=True,
-                storage_key=content_hash,
-            ))
+            checkpoint_files.append(
+                CheckpointFile(
+                    path=self._relative(abs_path),
+                    content_hash=content_hash,
+                    size_bytes=len(content.encode("utf-8")),
+                    encoding="utf-8",
+                    existed_before=True,
+                    storage_key=content_hash,
+                )
+            )
 
         checkpoint = Checkpoint(
             id=cp_id,
@@ -171,6 +175,7 @@ class CheckpointManager:
     ) -> Checkpoint:
         """Save checkpoint for entire project (delegates to SnapshotManager)."""
         from nexcode.checkpoints.snapshot import SnapshotManager
+
         sm = SnapshotManager(self.storage, self.project_root, self.session_id)
         return await sm.take(description, tags=tags)
 
@@ -188,6 +193,7 @@ class CheckpointManager:
 
         if preview:
             from nexcode.checkpoints.diff import CheckpointDiff
+
             differ = CheckpointDiff(self.storage, self.project_root)
             differ.show_restore_preview(cp)
             try:
@@ -219,9 +225,15 @@ class CheckpointManager:
         # Filter to requested paths.
         filtered_files = [f for f in cp.files if f.path in paths or self._resolve(f.path) in paths]
         filtered_cp = Checkpoint(
-            id=cp.id, timestamp=cp.timestamp, session_id=cp.session_id,
-            task_id=cp.task_id, tool_name=cp.tool_name, description=cp.description,
-            files=filtered_files, metadata=cp.metadata, tags=cp.tags,
+            id=cp.id,
+            timestamp=cp.timestamp,
+            session_id=cp.session_id,
+            task_id=cp.task_id,
+            tool_name=cp.tool_name,
+            description=cp.description,
+            files=filtered_files,
+            metadata=cp.metadata,
+            tags=cp.tags,
         )
         return self._do_restore(filtered_cp)
 
@@ -298,7 +310,9 @@ class CheckpointManager:
 
     def get_file_checkpoints(self, path: str) -> list[Checkpoint]:
         rel = self._relative(path)
-        return [cp for cp in self.storage.list_checkpoints() if any(f.path == rel for f in cp.files)]
+        return [
+            cp for cp in self.storage.list_checkpoints() if any(f.path == rel for f in cp.files)
+        ]
 
     def list(
         self,
@@ -342,7 +356,7 @@ class CheckpointManager:
         """Clean up old checkpoints. Returns stats."""
         result = CleanupResult()
         all_cps = self.storage.list_checkpoints()
-        cutoff = datetime.now(timezone.utc).timestamp() - (max_age_days * 86400)
+        cutoff = datetime.now(UTC).timestamp() - (max_age_days * 86400)
 
         to_delete: list[str] = []
         for cp in all_cps:
