@@ -7,12 +7,12 @@ All 30+ built-in commands organized by category.
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from rich.console import Console
 
 from nexcode.commands.base import BaseCommand, CommandResult
-
 
 # ═══════════════════════════════════════════════════════════════════════════
 # SESSION COMMANDS
@@ -169,7 +169,7 @@ class ModelCommand(BaseCommand):
             if hasattr(ai, "config"):
                 ai.config.default_model = new_model
                 save_config(ai.config)
-                
+
         return CommandResult(success=True, output=f"✓ Switched to: {new_model}")
 
 
@@ -185,7 +185,7 @@ class ProviderCommand(BaseCommand):
         if not args:
             provider = getattr(ai, "current_provider", "unknown") if ai else "unknown"
             return CommandResult(success=True, output=f"Current provider: {provider}")
-        
+
         new_provider = args[0]
         if ai and hasattr(ai, "current_provider"):
             ai.current_provider = new_provider
@@ -275,7 +275,7 @@ class AuthCommand(BaseCommand):
             return CommandResult(success=True)
 
         # Fallback: build a quick status table from env vars.
-        from nexcode.ai.auth import AuthManager, ENV_KEY_MAP
+        from nexcode.ai.auth import AuthManager
         am = AuthManager()
         am.show_auth_status(Console())
         return CommandResult(success=True)
@@ -305,7 +305,8 @@ class ApiKeyCommand(BaseCommand):
         from pathlib import Path
         toml_path = Path(os.getcwd()) / ".nexcode.toml"
         try:
-            import tomli, tomli_w
+            import tomli
+            import tomli_w
             existing: dict = {}
             if toml_path.exists():
                 existing = tomli.loads(toml_path.read_text(encoding="utf-8"))
@@ -405,14 +406,21 @@ class IgnoreCommand(BaseCommand):
     description = "Add path to .nexcode-ignore"
     usage = "/ignore [path]"
     category = "safety"
+    _lock = asyncio.Lock()
 
     async def execute(self, args: list[str], context: Any = None, **svc: Any) -> CommandResult:
         if not args:
             return CommandResult(success=False, output="Usage: /ignore .env")
         import os
         ignore_path = os.path.join(os.getcwd(), ".nexcode-ignore")
-        with open(ignore_path, "a", encoding="utf-8") as f:
-            f.write(args[0] + "\n")
+
+        def _write():
+            with open(ignore_path, "a", encoding="utf-8") as f:
+                f.write(args[0] + "\n")
+
+        async with self._lock:
+            await asyncio.to_thread(_write)
+
         return CommandResult(success=True, output=f"✓ Added '{args[0]}' to .nexcode-ignore")
 
 
@@ -448,7 +456,8 @@ class RunCommand(BaseCommand):
         if not args:
             return CommandResult(success=False, output="Usage: /run npm install")
         command = " ".join(args)
-        import asyncio, subprocess
+        import asyncio
+        import subprocess
         try:
             proc = await asyncio.create_subprocess_shell(
                 command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -628,7 +637,8 @@ class VersionCommand(BaseCommand):
     category = "system"
 
     async def execute(self, args: list[str], context: Any = None, **svc: Any) -> CommandResult:
-        import platform, sys
+        import platform
+        import sys
         return CommandResult(success=True, output=(
             f"NexCode v1.0.0\n"
             f"Python {sys.version.split()[0]}\n"
