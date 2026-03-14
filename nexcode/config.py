@@ -9,20 +9,15 @@ Supports hierarchical resolution: defaults → user config → project config �
 from __future__ import annotations
 
 import os
-import sys
+
+# tomli is built-in as tomllib in Python 3.11+, but we keep the
+# dependency for explicit version control.
+import tomllib  # type: ignore[no-redef]
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
-# tomli is built-in as tomllib in Python 3.11+, but we keep the
-# dependency for explicit version control.
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib  # type: ignore[no-redef]
-
 import tomli_w
-
 
 # ---------------------------------------------------------------------------
 # Constants

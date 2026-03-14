@@ -8,9 +8,7 @@ with beautiful Rich formatting and AI-friendly output.
 
 from __future__ import annotations
 
-import re
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
 
 from rich.console import Console
 from rich.text import Text
@@ -82,13 +80,12 @@ class CommitHistory:
     def show_commit(self, commit_hash: str) -> str:
         """Show detailed info for a specific commit."""
         try:
-            commits = self.engine.get_log(limit=1)
             # Find the commit in a broader search.
             repo = self.engine._get_repo()
             c = repo.commit(commit_hash)
             info = self.engine._commit_to_info(c)
         except Exception as exc:
-            msg = f"Commit not found: {commit_hash}"
+            msg = f"Commit not found: {commit_hash} ({exc})"
             self.console.print(f"  [red]{msg}[/]")
             return msg
 
@@ -167,7 +164,7 @@ class CommitHistory:
 
 def _relative_time(dt: datetime) -> str:
     """Convert a datetime to a human-readable relative time string."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     diff = now - dt
     seconds = int(diff.total_seconds())
 

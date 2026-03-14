@@ -13,14 +13,12 @@ import asyncio
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Any
 
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
 from nexcode.execution.runner import CommandRunner
-
 
 # ---------------------------------------------------------------------------
 # Constants

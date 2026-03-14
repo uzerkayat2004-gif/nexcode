@@ -13,7 +13,6 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
@@ -255,7 +254,7 @@ class WebSearchEngine:
         import asyncio
 
         def _do_search(q: str, n: int) -> list[dict]:
-            from duckduckgo_search import DDGS
+            from ddgs import DDGS
             with DDGS() as ddgs:
                 return list(ddgs.text(q, max_results=n))
 

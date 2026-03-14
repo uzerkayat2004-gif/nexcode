@@ -11,7 +11,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # Observation
 # ---------------------------------------------------------------------------
@@ -130,7 +129,7 @@ class ResultObserver:
                 if result and hasattr(result, "error") and result.error:
                     errors.append(result.error)
             return (
-                f"Multiple tool failures detected. Recent errors:\n"
+                "Multiple tool failures detected. Recent errors:\n"
                 + "\n".join(f"  - {e}" for e in errors[-3:])
                 + "\n\nTry checking file paths and permissions."
             )

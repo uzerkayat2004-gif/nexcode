@@ -11,6 +11,7 @@ from __future__ import annotations
 import difflib
 import os
 from dataclasses import dataclass, field
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
@@ -20,7 +21,6 @@ from rich.text import Text
 
 from nexcode.checkpoints.manager import Checkpoint
 from nexcode.checkpoints.storage import CheckpointStorage
-
 
 # ---------------------------------------------------------------------------
 # CheckpointSummary
@@ -262,10 +262,10 @@ class CheckpointDiff:
 
 
 def _relative_time(dt: Any) -> str:
-    from datetime import datetime, timezone
+    from datetime import datetime
     if not isinstance(dt, datetime):
         return str(dt)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     diff = now - dt
     secs = int(diff.total_seconds())
     if secs < 60:

@@ -9,9 +9,8 @@ surfaces key files for the AI.
 
 from __future__ import annotations
 
-import os
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -20,7 +19,6 @@ from rich.panel import Panel
 from rich.text import Text
 
 from nexcode.memory.store import MemoryStore
-
 
 # ---------------------------------------------------------------------------
 # ProjectMemory dataclass
@@ -42,7 +40,7 @@ class ProjectMemory:
     coding_conventions: list[str] = field(default_factory=list)
     common_commands: list[str] = field(default_factory=list)
     team_members: list[str] = field(default_factory=list)
-    last_updated: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_updated: datetime = field(default_factory=lambda: datetime.now(UTC))
     total_sessions: int = 0
     total_tasks: int = 0
 
@@ -130,7 +128,7 @@ class ProjectMemoryManager:
 
     def save(self, project: ProjectMemory) -> None:
         """Save project memory to store."""
-        project.last_updated = datetime.now(timezone.utc)
+        project.last_updated = datetime.now(UTC)
         key = self._project_key(project.project_path)
         self.store.save(key, project.to_dict())
 
@@ -291,11 +289,11 @@ class ProjectMemoryManager:
         body.append(f"  Package Mgr: {project.package_manager or '—'}\n", style="white")
 
         if project.key_files:
-            body.append(f"\n  Key Files:\n", style="bold")
+            body.append("\n  Key Files:\n", style="bold")
             body.append(f"    📄 {', '.join(project.key_files)}\n", style="dim")
 
         if project.architecture_notes:
-            body.append(f"\n  Architecture:\n", style="bold")
+            body.append("\n  Architecture:\n", style="bold")
             body.append(f"    {project.architecture_notes[:200]}\n", style="dim")
 
         if project.team_members:
