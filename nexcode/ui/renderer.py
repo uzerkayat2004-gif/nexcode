@@ -18,7 +18,7 @@ from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 
-from nexcode.ui.themes import Theme, THEMES
+from nexcode.ui.themes import THEMES, Theme
 
 
 class OutputRenderer:

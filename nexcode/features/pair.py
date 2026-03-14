@@ -92,7 +92,7 @@ class PairProgrammingSession:
             self.console.print(f"  Found {iteration.issues_found} suggestions\n")
 
             # Driver improves based on feedback.
-            self.console.print(f"  🧑‍💻 Driver improves based on feedback...\n")
+            self.console.print("  🧑‍💻 Driver improves based on feedback...\n")
             improved = await self._driver_improve(code, feedback, instruction)
             iteration.improved_code = improved
             iteration.improvement_summary = f"Applied {iteration.issues_found} improvements"

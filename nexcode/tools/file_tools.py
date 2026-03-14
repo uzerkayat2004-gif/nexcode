@@ -11,24 +11,17 @@ Every tool extends ``BaseTool`` and returns a ``ToolResult``.
 from __future__ import annotations
 
 import mimetypes
-import os
 import shutil
-import stat
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
-from rich.console import Console
-from rich.tree import Tree
 
 from nexcode.tools.base import (
     BaseTool,
     CheckpointManager,
     ToolResult,
     generate_diff_string,
-    show_diff,
 )
-
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -429,7 +422,7 @@ class DeleteFileTool(BaseTool):
         trash_dir = Path.cwd() / ".nexcode_trash"
         trash_dir.mkdir(parents=True, exist_ok=True)
 
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         trash_name = f"{timestamp}_{path.name}"
         trash_path = trash_dir / trash_name
 
@@ -669,8 +662,8 @@ class FileInfoTool(BaseTool):
 
         st = path.stat()
         size = _human_size(st.st_size)
-        modified = datetime.fromtimestamp(st.st_mtime, tz=timezone.utc).isoformat()
-        created = datetime.fromtimestamp(st.st_ctime, tz=timezone.utc).isoformat()
+        modified = datetime.fromtimestamp(st.st_mtime, tz=UTC).isoformat()
+        created = datetime.fromtimestamp(st.st_ctime, tz=UTC).isoformat()
 
         mime = mimetypes.guess_type(str(path))[0] or "unknown"
         is_bin = _is_binary(path) if path.is_file() else False

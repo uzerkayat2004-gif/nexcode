@@ -9,14 +9,12 @@ push, pull, log, branch, stash, reset, restore, tag, blame.
 
 from __future__ import annotations
 
-import os
 from typing import Any
 
-from nexcode.git.engine import GitEngine, GitError
 from nexcode.git.diff import DiffDisplay
+from nexcode.git.engine import GitEngine, GitError
 from nexcode.git.history import CommitHistory
 from nexcode.tools.base import BaseTool, ToolResult
-
 
 # ---------------------------------------------------------------------------
 # Shared lazy-init
@@ -693,8 +691,6 @@ def _auto_commit_message(diff: str, staged_files: list[str]) -> str:
         return "chore: update files"
 
     # Determine commit type from file patterns.
-    all_files = " ".join(staged_files).lower()
-
     if any(f.startswith("test") or "test_" in f or "_test." in f for f in staged_files):
         commit_type = "test"
     elif any(f.endswith((".md", ".txt", ".rst")) for f in staged_files):

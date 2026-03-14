@@ -12,11 +12,9 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import shutil
-from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from nexcode.checkpoints.manager import Checkpoint
@@ -94,14 +92,14 @@ class CheckpointStorage:
 
     # ── Checkpoint metadata ────────────────────────────────────────────────
 
-    def save_checkpoint(self, checkpoint: "Checkpoint") -> None:
+    def save_checkpoint(self, checkpoint: Checkpoint) -> None:
         """Save checkpoint metadata as JSON."""
         path = self.checkpoints_dir / f"{checkpoint.id}.json"
         data = _checkpoint_to_dict(checkpoint)
         path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
         self._update_index(checkpoint.id, "add")
 
-    def load_checkpoint(self, checkpoint_id: str) -> "Checkpoint | None":
+    def load_checkpoint(self, checkpoint_id: str) -> Checkpoint | None:
         """Load checkpoint metadata by ID."""
         path = self.checkpoints_dir / f"{checkpoint_id}.json"
         if not path.exists():
@@ -112,7 +110,7 @@ class CheckpointStorage:
         except (json.JSONDecodeError, TypeError, KeyError):
             return None
 
-    def list_checkpoints(self) -> list["Checkpoint"]:
+    def list_checkpoints(self) -> list[Checkpoint]:
         """List all checkpoints, newest first."""
         checkpoints: list[Checkpoint] = []
         for f in sorted(self.checkpoints_dir.glob("*.json"), reverse=True):
@@ -196,8 +194,7 @@ class CheckpointStorage:
 # Serialization helpers
 # ---------------------------------------------------------------------------
 
-def _checkpoint_to_dict(cp: "Checkpoint") -> dict[str, Any]:
-    from nexcode.checkpoints.manager import Checkpoint, CheckpointFile
+def _checkpoint_to_dict(cp: Checkpoint) -> dict[str, Any]:
     return {
         "id": cp.id,
         "timestamp": cp.timestamp.isoformat(),
@@ -221,7 +218,7 @@ def _checkpoint_to_dict(cp: "Checkpoint") -> dict[str, Any]:
     }
 
 
-def _dict_to_checkpoint(data: dict[str, Any]) -> "Checkpoint | None":
+def _dict_to_checkpoint(data: dict[str, Any]) -> Checkpoint | None:
     from nexcode.checkpoints.manager import Checkpoint, CheckpointFile
     try:
         files = [

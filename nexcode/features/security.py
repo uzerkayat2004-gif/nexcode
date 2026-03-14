@@ -18,7 +18,6 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
-
 SECRET_PATTERNS: list[tuple[str, str]] = [
     (r"(?i)(api[_-]?key|apikey)\s*[=:]\s*['\"][A-Za-z0-9_\-]{16,}['\"]", "API key"),
     (r"(?i)(secret|password|passwd|pwd)\s*[=:]\s*['\"][^'\"]{8,}['\"]", "Secret/password"),

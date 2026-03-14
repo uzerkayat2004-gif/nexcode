@@ -17,7 +17,6 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
@@ -202,10 +201,6 @@ class SubagentManager:
         This is a lightweight version of the main AgentLoop,
         limited in scope and tool access.
         """
-        from nexcode.agent.context import AgentContext
-
-        sub_context = AgentContext()
-
         # Build focused system prompt.
         system = (
             "You are a focused subagent working on a specific subtask. "

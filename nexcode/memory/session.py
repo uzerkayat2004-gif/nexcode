@@ -12,15 +12,12 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from rich.console import Console
 from rich.table import Table
-
-from nexcode.memory.store import MemoryStore
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -68,7 +65,7 @@ class Session:
 
     @property
     def duration_display(self) -> str:
-        end = self.ended_at or datetime.now(timezone.utc)
+        end = self.ended_at or datetime.now(UTC)
         delta = end - self.started_at
         secs = int(delta.total_seconds())
         if secs < 60:
@@ -96,7 +93,7 @@ class SessionManager:
 
     def start(self, project_path: str, model: str = "", provider: str = "") -> Session:
         """Start a new session."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         session = Session(
             id=f"ses_{now.strftime('%Y%m%d_%H%M%S')}",
             started_at=now,
@@ -124,7 +121,7 @@ class SessionManager:
 
     async def end(self, session: Session, ai_provider: Any = None) -> None:
         """End session: set timestamp, generate AI summary, save."""
-        session.ended_at = datetime.now(timezone.utc)
+        session.ended_at = datetime.now(UTC)
 
         # Generate AI summary if provider available.
         if ai_provider and session.messages:
@@ -257,8 +254,8 @@ class SessionManager:
 
     def _session_to_markdown(self, session: Session) -> str:
         lines = [
-            f"# NexCode Session Report",
-            f"",
+            "# NexCode Session Report",
+            "",
             f"**Session:** {session.id}",
             f"**Project:** {session.project_name}",
             f"**Date:** {session.started_at.isoformat()}",
@@ -266,7 +263,7 @@ class SessionManager:
             f"**Model:** {session.model_used}",
             f"**Tasks:** {session.tasks_completed}",
             f"**Cost:** ${session.cost_usd:.4f}",
-            f"",
+            "",
         ]
         if session.summary:
             lines.append(f"## Summary\n{session.summary}\n")
@@ -288,7 +285,7 @@ def _hash_path(path: str) -> str:
 
 
 def _relative_time(dt: datetime) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     diff = now - dt
     secs = int(diff.total_seconds())
     if secs < 60:

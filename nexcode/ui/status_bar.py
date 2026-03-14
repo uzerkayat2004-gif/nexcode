@@ -9,9 +9,8 @@ showing model, mode, context usage, and session cost.
 from __future__ import annotations
 
 from rich.console import Console
-from rich.text import Text
 
-from nexcode.ui.themes import Theme, THEMES
+from nexcode.ui.themes import THEMES, Theme
 
 
 class StatusBar:
