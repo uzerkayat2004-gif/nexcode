@@ -149,26 +149,36 @@ class GetPackageInfoTool(BaseTool):
     parameters = {
         "type": "object",
         "properties": {
-            "package": {"type": "string", "description": "Package name"},
+            "package": {
+                "type": ["string", "array"],
+                "items": {"type": "string"},
+                "description": "Package name or list of packages"
+            },
             "ecosystem": {"type": "string", "enum": ["npm", "pypi", "cargo", "go"]},
         },
         "required": ["package", "ecosystem"],
     }
 
     async def execute(self, **kwargs: Any) -> ToolResult:
-        from nexcode.web.fetcher import WebFetcher
-        fetcher = WebFetcher()
+        from nexcode.web.researcher import DeepResearcher
+        researcher = DeepResearcher()
         package = kwargs["package"]
         eco = kwargs["ecosystem"]
 
-        if eco == "npm":
-            page = await fetcher.fetch_npm(package)
-        elif eco == "pypi":
-            page = await fetcher.fetch_pypi(package)
+        if eco in ("npm", "pypi"):
+            result = await researcher.get_latest_version(package, eco)
+            output = str(result)
         else:
-            page = await fetcher.fetch(f"https://crates.io/api/v1/crates/{package}")
+            from nexcode.web.fetcher import WebFetcher
+            fetcher = WebFetcher()
+            if isinstance(package, list):
+                # Just fetch the first one for crates since it's not fully supported in get_latest_version
+                pkg = package[0] if package else ""
+            else:
+                pkg = package
+            page = await fetcher.fetch(f"https://crates.io/api/v1/crates/{pkg}")
+            output = page.content[:3000] if page.content else f"No info found for {pkg}"
 
-        output = page.content[:3000] if page.content else f"No info found for {package}"
         display = f"📦 {package} ({eco})"
         return ToolResult(success=True, output=output, display=display)
 
