@@ -13,7 +13,6 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
@@ -276,8 +275,7 @@ class WebSearchEngine:
             if raw:
                 return _parse(raw)
 
-            # Retry with simplified query after a short wait.
-            await asyncio.sleep(2)
+            # Retry with simplified query immediately.
             simplified = " ".join(query.split()[:6])  # Keep first 6 words.
             raw = await asyncio.to_thread(_do_search, simplified, max_results)
             if raw:
