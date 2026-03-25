@@ -15,7 +15,6 @@ from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import urlparse
 
-
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------

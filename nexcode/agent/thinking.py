@@ -9,7 +9,6 @@ and task completion / abort displays.
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 from rich.console import Console

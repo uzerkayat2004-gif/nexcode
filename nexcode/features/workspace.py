@@ -11,14 +11,12 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from rich.console import Console
-from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
 
 
 @dataclass
@@ -68,7 +66,7 @@ class WorkspaceManager:
 
         project = Project(
             id=proj_id, name=proj_name, path=abs_path,
-            language=language, last_opened=datetime.now(timezone.utc).isoformat(),
+            language=language, last_opened=datetime.now(UTC).isoformat(),
             git_remote=git_remote, tags=tags or [],
         )
 
@@ -91,7 +89,7 @@ class WorkspaceManager:
             self.console.print(f"  [red]Path doesn't exist: {project.path}[/]")
             return None
 
-        project.last_opened = datetime.now(timezone.utc).isoformat()
+        project.last_opened = datetime.now(UTC).isoformat()
         self._current = project.id
         self._save()
         os.chdir(project.path)
@@ -195,7 +193,7 @@ class WorkspaceManager:
     def _relative_time(self, iso: str) -> str:
         try:
             dt = datetime.fromisoformat(iso)
-            secs = int((datetime.now(timezone.utc) - dt).total_seconds())
+            secs = int((datetime.now(UTC) - dt).total_seconds())
             if secs < 60: return "now"
             if secs < 3600: return f"{secs//60}m ago"
             if secs < 86400: return f"{secs//3600}h ago"

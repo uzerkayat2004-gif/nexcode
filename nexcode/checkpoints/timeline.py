@@ -9,7 +9,7 @@ and storage statistics dashboard.
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from rich.console import Console
@@ -67,7 +67,7 @@ class TimelineVisualizer:
                 body.append(tag_str, style="green")
             body.append("\n", style="white")
 
-            body.append(f"  │            ", style="dim")
+            body.append("  │            ", style="dim")
             body.append(f'"{cp.description[:50]}"\n', style="dim")
 
             file_count = len(cp.files)
@@ -174,7 +174,7 @@ class TimelineVisualizer:
 def _rel_time(dt: Any) -> str:
     if not isinstance(dt, datetime):
         return str(dt)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     secs = int((now - dt).total_seconds())
     if secs < 60:
         return f"{secs}s ago"

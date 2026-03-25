@@ -10,11 +10,10 @@ stashing, tagging, and remote operations.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
 
 # ---------------------------------------------------------------------------
 # Data classes
@@ -506,7 +505,7 @@ class GitEngine:
             message=commit.message.strip(),
             author=str(commit.author),
             email=commit.author.email if commit.author else "",
-            date=datetime.fromtimestamp(commit.committed_date, tz=timezone.utc),
+            date=datetime.fromtimestamp(commit.committed_date, tz=UTC),
             files_changed=files_changed,
             insertions=insertions,
             deletions=deletions,

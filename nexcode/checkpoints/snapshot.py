@@ -10,9 +10,8 @@ from __future__ import annotations
 import fnmatch
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
@@ -24,7 +23,6 @@ from nexcode.checkpoints.manager import (
     RestoreResult,
 )
 from nexcode.checkpoints.storage import CheckpointStorage
-
 
 # ---------------------------------------------------------------------------
 # Default excludes
@@ -73,7 +71,7 @@ class SnapshotManager:
         if exclude_patterns:
             excludes.extend(exclude_patterns)
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         suffix = uuid.uuid4().hex[:4]
         cp_id = f"ckpt_{now.strftime('%Y%m%d_%H%M%S')}_{suffix}"
 

@@ -12,14 +12,13 @@ from __future__ import annotations
 import json
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from rich.console import Console
 from rich.table import Table
 
 from nexcode.memory.store import MemoryStore
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -74,8 +73,8 @@ class Memory:
     category: str = "reminder"
     project: str | None = None
     source: str = "manual"       # "auto" or "manual"
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    last_used: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    last_used: datetime = field(default_factory=lambda: datetime.now(UTC))
     use_count: int = 0
     importance: float = 0.5
     tags: list[str] = field(default_factory=list)
@@ -200,7 +199,7 @@ class LongTermMemory:
         for mem in self._memories:
             if mem.id == memory_id:
                 mem.content = content
-                mem.last_used = datetime.now(timezone.utc)
+                mem.last_used = datetime.now(UTC)
                 self._save()
                 return mem
         return None
@@ -283,7 +282,7 @@ class LongTermMemory:
         for m in self._memories:
             if m.id == memory_id:
                 m.use_count += 1
-                m.last_used = datetime.now(timezone.utc)
+                m.last_used = datetime.now(UTC)
                 self._save()
                 return
 

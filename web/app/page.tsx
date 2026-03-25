@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import DOMPurify from "isomorphic-dompurify";
 import {
   sendStreamingMessage,
   fetchConversations,
@@ -708,7 +709,7 @@ function FormattedContent({ content }: { content: string }) {
           .replace(/`([^`]+)`/g, '<code style="background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;font-family:JetBrains Mono,monospace;font-size:12px">$1</code>')
           .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
           .replace(/\n/g, "<br />");
-        return <span key={i} dangerouslySetInnerHTML={{ __html: html }} />;
+        return <span key={i} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />;
       })}
     </>
   );

@@ -9,18 +9,18 @@ from __future__ import annotations
 
 import re
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
 def timestamp_iso() -> str:
     """Return the current UTC time as an ISO 8601 string."""
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def timestamp_short() -> str:
     """Return a compact human-readable timestamp (e.g., '2024-01-15 14:30')."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+    return datetime.now(UTC).strftime("%Y-%m-%d %H:%M")
 
 
 def slugify(text: str, *, max_length: int = 64) -> str:

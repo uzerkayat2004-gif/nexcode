@@ -16,19 +16,15 @@ import difflib
 import hashlib
 import json
 import shutil
-import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.table import Table
 from rich.text import Text
-from rich.tree import Tree
-
 
 # ---------------------------------------------------------------------------
 # ToolResult — standardized output from every tool
@@ -267,7 +263,7 @@ class CheckpointManager:
             return ""
 
         # Generate a unique checkpoint ID.
-        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         file_hash = hashlib.md5(str(file_path).encode()).hexdigest()[:8]
         checkpoint_id = f"{ts}_{file_hash}"
 
@@ -279,7 +275,7 @@ class CheckpointManager:
         checkpoint = Checkpoint(
             checkpoint_id=checkpoint_id,
             file_path=str(file_path),
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             size_bytes=file_path.stat().st_size,
             backup_path=str(backup_path),
         )
