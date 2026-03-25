@@ -8,11 +8,12 @@ autocomplete, multi-line editing, and persistent history.
 
 from __future__ import annotations
 
-import asyncio
+import os
 from pathlib import Path
 from typing import Any
 
 from rich.console import Console
+
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -24,7 +25,6 @@ _HISTORY_FILE = Path.home() / ".nexcode" / "history"
 # ---------------------------------------------------------------------------
 # NexCodePrompt
 # ---------------------------------------------------------------------------
-
 
 class NexCodePrompt:
     """
@@ -47,8 +47,6 @@ class NexCodePrompt:
         self._commands = commands or []
         self._history: list[str] = []
         self._load_history()
-        self._history_lock: asyncio.Lock | None = None
-        self._background_tasks: set[asyncio.Task] = set()
 
     # ── Main input ─────────────────────────────────────────────────────────
 
@@ -86,12 +84,11 @@ class NexCodePrompt:
 
     async def _get_input_prompt_toolkit(self, prompt_display: str) -> str:
         """Rich input using prompt_toolkit."""
-        import asyncio
-
         from prompt_toolkit import PromptSession
         from prompt_toolkit.completion import WordCompleter
         from prompt_toolkit.history import FileHistory
         from prompt_toolkit.key_binding import KeyBindings
+        import asyncio
 
         # Build completions list.
         completions = list(self._commands)
@@ -203,32 +200,12 @@ class NexCodePrompt:
 
     def _add_history(self, text: str) -> None:
         self._history.append(text)
-
-        def _write() -> None:
-            try:
-                _HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
-                with open(_HISTORY_FILE, "a", encoding="utf-8") as f:
-                    f.write(text + "\n")
-            except OSError:
-                pass
-
-        async def _write_async() -> None:
-            if self._history_lock is None:
-                self._history_lock = asyncio.Lock()
-            async with self._history_lock:
-                await asyncio.to_thread(_write)
-
         try:
-            loop = asyncio.get_running_loop()
-            if loop.is_running():
-                task = loop.create_task(_write_async())
-                self._background_tasks.add(task)
-                task.add_done_callback(self._background_tasks.discard)
-            else:
-                _write()
-        except RuntimeError:
-            # No running event loop
-            _write()
+            _HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with open(_HISTORY_FILE, "a", encoding="utf-8") as f:
+                f.write(text + "\n")
+        except OSError:
+            pass
 
     def _load_history(self) -> None:
         if _HISTORY_FILE.exists():
