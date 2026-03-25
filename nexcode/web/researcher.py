@@ -14,12 +14,9 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from rich.console import Console
-from rich.panel import Panel
-from rich.text import Text
 
 from nexcode.web.fetcher import WebFetcher
 from nexcode.web.search import SearchResult, WebSearchEngine
-
 
 # ---------------------------------------------------------------------------
 # Data classes
@@ -185,8 +182,14 @@ class DeepResearcher:
 
     # ── Package version ────────────────────────────────────────────────────
 
-    async def get_latest_version(self, package: str, ecosystem: str) -> str | None:
-        """Get latest version of a package."""
+    async def get_latest_version(
+        self, package: str | list[str], ecosystem: str
+    ) -> str | list[str | None] | None:
+        """Get latest version of a package or a list of packages."""
+        if isinstance(package, list):
+            tasks = [self.get_latest_version(p, ecosystem) for p in package]
+            return await asyncio.gather(*tasks)
+
         urls = {
             "npm": f"https://registry.npmjs.org/{package}/latest",
             "pypi": f"https://pypi.org/pypi/{package}/json",
