@@ -8,8 +8,8 @@ spinners, and clean formatting for a premium CLI experience.
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Generator
 
 from rich.console import Console
 from rich.live import Live
@@ -21,7 +21,6 @@ from rich.text import Text
 from rich.theme import Theme
 
 from nexcode import __app_name__, __version__
-
 
 # ---------------------------------------------------------------------------
 # Theme definitions

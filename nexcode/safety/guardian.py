@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from typing import Any
 
 from rich.console import Console
@@ -20,13 +19,11 @@ from rich.text import Text
 
 from nexcode.safety.audit import AuditEntry, AuditLog
 from nexcode.safety.permissions import (
-    PermissionDecision,
+    RISK_MATRIX,
     PermissionManager,
     PermissionRequest,
-    RISK_MATRIX,
 )
 from nexcode.safety.rules import RuleViolation, SafetyRules
-
 
 # ---------------------------------------------------------------------------
 # GuardianDecision
@@ -165,14 +162,14 @@ class Guardian:
         # Session grants.
         grants = self.permissions._session_grants
         if grants:
-            body.append(f"\n  Pre-approved this session:\n", style="bold")
+            body.append("\n  Pre-approved this session:\n", style="bold")
             for tool, pattern in grants.items():
                 body.append(f"    ✅ {tool} ({pattern})\n", style="green")
 
         # Always denied.
         denies = self.permissions._always_denies
         if denies:
-            body.append(f"\n  Always blocked:\n", style="bold")
+            body.append("\n  Always blocked:\n", style="bold")
             for tool in denies:
                 body.append(f"    🛑 {tool}\n", style="red")
 

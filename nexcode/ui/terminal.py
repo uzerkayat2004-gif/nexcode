@@ -8,12 +8,10 @@ slash commands, agent loop, and graceful shutdown.
 
 from __future__ import annotations
 
-import asyncio
 import os
 from typing import Any
 
 from rich.console import Console
-from rich.panel import Panel
 from rich.text import Text
 
 from nexcode.commands.registry import CommandRegistry
@@ -21,7 +19,6 @@ from nexcode.ui.prompt import NexCodePrompt
 from nexcode.ui.renderer import OutputRenderer
 from nexcode.ui.status_bar import StatusBar
 from nexcode.ui.themes import ThemeManager
-
 
 # ---------------------------------------------------------------------------
 # Banner
@@ -233,9 +230,9 @@ class NexCodeTerminal:
     def _init_services(self) -> None:
         """Initialize memory and session services."""
         try:
-            from nexcode.memory.session import SessionManager
             from nexcode.memory.long_term import LongTermMemory
             from nexcode.memory.project import ProjectMemoryManager
+            from nexcode.memory.session import SessionManager
             from nexcode.memory.store import MemoryStore
 
             store = MemoryStore()
@@ -273,7 +270,7 @@ class NexCodeTerminal:
         project = os.path.basename(os.getcwd())
 
         info = Text()
-        info.append(f"  v1.0.0", style="dim")
+        info.append("  v1.0.0", style="dim")
         info.append("  │  ", style="dim")
         info.append("Better than Claude Code", style="dim")
         info.append("  │  ", style="dim")

@@ -19,7 +19,6 @@ from typing import Any
 
 from nexcode.tools.base import (
     BaseTool,
-    CheckpointManager,
     ToolResult,
     generate_diff_string,
 )
@@ -32,7 +31,6 @@ from nexcode.tools.file_tools import (
     _read_text_safe,
     _resolve_path,
 )
-
 
 # ---------------------------------------------------------------------------
 # Shared constants
@@ -480,7 +478,7 @@ class ReadManyFilesTool(BaseTool):
             header = f"\n{'═' * 60}\n📄 {path_str} ({len(lines)} lines)\n{'═' * 60}"
             results.append(header + "\n" + numbered)
             if truncated:
-                results.append(f"\n... [truncated to fit token budget]")
+                results.append("\n... [truncated to fit token budget]")
 
             if total_chars >= _MAX_READ_MANY_TOTAL:
                 remaining = len(paths) - files_read

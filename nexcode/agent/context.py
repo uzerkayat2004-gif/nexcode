@@ -11,11 +11,9 @@ from __future__ import annotations
 import json
 import os
 import platform
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -77,7 +75,7 @@ class AgentContext:
         self._system_prompt: str = ""
         self._token_count: int = 0
         self._project_context: str = ""
-        self._session_id: str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        self._session_id: str = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         self._files_modified: list[str] = []
 
         # Load project context on init.
@@ -225,7 +223,7 @@ class AgentContext:
         data = {
             "session_id": self._session_id,
             "cwd": self.cwd,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "messages": self._messages,
             "files_modified": self._files_modified,
             "token_count": self._token_count,

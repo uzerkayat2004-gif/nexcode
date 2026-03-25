@@ -9,17 +9,13 @@ managing dependencies, background processes, and environment.
 from __future__ import annotations
 
 import os
-import platform
-import re
 import shutil
 from pathlib import Path
 from typing import Any
 
-from nexcode.execution.runner import CommandRunner, ExecutionResult
 from nexcode.execution.process import ProcessManager
-from nexcode.execution.sandbox import PlatformAdapter
+from nexcode.execution.runner import CommandRunner
 from nexcode.tools.base import BaseTool, ToolResult
-
 
 # ---------------------------------------------------------------------------
 # Shared singletons — these will be overridden from the registry

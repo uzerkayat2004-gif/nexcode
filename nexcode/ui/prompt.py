@@ -8,12 +8,10 @@ autocomplete, multi-line editing, and persistent history.
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any
 
 from rich.console import Console
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -84,11 +82,12 @@ class NexCodePrompt:
 
     async def _get_input_prompt_toolkit(self, prompt_display: str) -> str:
         """Rich input using prompt_toolkit."""
+        import asyncio
+
         from prompt_toolkit import PromptSession
         from prompt_toolkit.completion import WordCompleter
         from prompt_toolkit.history import FileHistory
         from prompt_toolkit.key_binding import KeyBindings
-        import asyncio
 
         # Build completions list.
         completions = list(self._commands)

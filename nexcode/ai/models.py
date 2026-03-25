@@ -9,8 +9,6 @@ including context windows, capabilities, and per-token pricing.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
-
 
 # ---------------------------------------------------------------------------
 # Model info dataclass

@@ -20,7 +20,7 @@ from __future__ import annotations
 import asyncio
 import time
 from collections.abc import AsyncIterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import litellm
@@ -28,13 +28,11 @@ from rich.text import Text
 
 from nexcode.ai.auth import AuthManager
 from nexcode.ai.models import (
-    MODEL_REGISTRY,
     ModelInfo,
     get_model_info,
     list_models_for_provider,
 )
 from nexcode.config import NexCodeConfig
-
 
 # Suppress LiteLLM's verbose logging.
 litellm.suppress_debug_info = True

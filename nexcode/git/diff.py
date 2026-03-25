@@ -10,12 +10,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
-
 
 # ---------------------------------------------------------------------------
 # Data classes
