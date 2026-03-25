@@ -18,19 +18,18 @@ import secrets
 import time
 import webbrowser
 from dataclasses import dataclass
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from threading import Thread
 from typing import Any
-from urllib.parse import urlencode, urlparse, parse_qs
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import httpx
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-from nexcode.ai.models import MODEL_REGISTRY, list_models_for_provider
-
+from nexcode.ai.models import list_models_for_provider
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -584,9 +583,18 @@ class AuthManager:
         # Step 2: Poll for the access token.
         deadline = time.time() + expires_in
 
+        # Schedule the first poll exactly `interval` seconds from now.
+        next_poll_time = time.time() + interval
+
         async with httpx.AsyncClient() as client:
             while time.time() < deadline:
-                await _async_sleep(interval)
+                sleep_time = max(0.0, next_poll_time - time.time())
+                if sleep_time > 0:
+                    await _async_sleep(sleep_time)
+
+                # Set the next poll time immediately before starting the request
+                # This ensures the request time is subtracted from the next sleep interval
+                next_poll_time = time.time() + interval
 
                 try:
                     resp = await client.post(
@@ -618,6 +626,8 @@ class AuthManager:
                     continue
                 elif error == "slow_down":
                     interval += 5
+                    # Since interval increased, adjust next_poll_time accordingly
+                    next_poll_time += 5
                 elif error in ("expired_token", "access_denied"):
                     print(f"  ✗ GitHub authorization failed: {error}")
                     return False
