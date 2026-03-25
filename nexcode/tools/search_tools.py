@@ -19,7 +19,6 @@ from typing import Any
 
 from nexcode.tools.base import (
     BaseTool,
-    CheckpointManager,
     ToolResult,
     generate_diff_string,
 )
@@ -32,7 +31,6 @@ from nexcode.tools.file_tools import (
     _read_text_safe,
     _resolve_path,
 )
-
 
 # ---------------------------------------------------------------------------
 # Shared constants
@@ -135,7 +133,7 @@ class SearchTextTool(BaseTool):
                     continue
 
                 # Skip binary files.
-                if _is_binary(file_path):
+                if await _is_binary(file_path):
                     continue
 
                 files_searched += 1
@@ -354,7 +352,7 @@ class SearchAndReplaceTool(BaseTool):
 
                 if _is_ignored(file_path, search_path, gitignore):
                     continue
-                if _is_binary(file_path):
+                if await _is_binary(file_path):
                     continue
 
                 try:
@@ -451,7 +449,7 @@ class ReadManyFilesTool(BaseTool):
                 results.append(f"\n{'═' * 60}\n📄 {path_str}\n{'═' * 60}\n[File not found]")
                 continue
 
-            if _is_binary(path):
+            if await _is_binary(path):
                 results.append(f"\n{'═' * 60}\n📄 {path_str}\n{'═' * 60}\n[Binary file — skipped]")
                 continue
 
@@ -480,7 +478,7 @@ class ReadManyFilesTool(BaseTool):
             header = f"\n{'═' * 60}\n📄 {path_str} ({len(lines)} lines)\n{'═' * 60}"
             results.append(header + "\n" + numbered)
             if truncated:
-                results.append(f"\n... [truncated to fit token budget]")
+                results.append("\n... [truncated to fit token budget]")
 
             if total_chars >= _MAX_READ_MANY_TOTAL:
                 remaining = len(paths) - files_read
