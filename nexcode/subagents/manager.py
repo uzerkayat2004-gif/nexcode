@@ -156,8 +156,8 @@ class SubagentManager:
         return [w.get_status() for w in self._active.values()]
 
     async def abort_all(self) -> None:
-        for worker in self._active.values():
-            await worker.abort()
+        if self._active:
+            await asyncio.gather(*(worker.abort() for worker in self._active.values()))
         self.console.print("  [yellow]All subagents aborted[/]")
 
     def summarize_results(self, results: list[SubagentResult]) -> str:
