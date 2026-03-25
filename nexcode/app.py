@@ -9,6 +9,7 @@ conversation history, AI providers, and the tool system.
 from __future__ import annotations
 
 import asyncio
+import typing
 from pathlib import Path
 from typing import Any
 
@@ -62,9 +63,7 @@ class NexCodeApp:
         # Load workspace instructions if present.
         workspace_file = self.workspace_root / self.config.workspace_file
         if workspace_file.is_file():
-            self.display.system(
-                f"Loaded workspace instructions from {self.config.workspace_file}"
-            )
+            self.display.system(f"Loaded workspace instructions from {self.config.workspace_file}")
 
         self.display.show_ready(
             model=self.provider.current_model,
@@ -93,9 +92,7 @@ class NexCodeApp:
         """Async REPL — read, eval, print, loop."""
         while True:
             try:
-                user_input = await asyncio.to_thread(
-                    input, "  \033[96mnexcode\033[0m › "
-                )
+                user_input = await asyncio.to_thread(input, "  \033[96mnexcode\033[0m › ")
             except (EOFError, KeyboardInterrupt):
                 break
 
@@ -141,15 +138,19 @@ class NexCodeApp:
         self.history.add_user(user_input)
 
         # Check context window usage.
-        warning = self.provider.check_context_warnings(
-            self.history.get_api_messages()
-        )
+        warning = self.provider.check_context_warnings(self.history.get_api_messages())
         if warning:
             self.display.warning(warning)
 
         # Get API schemas for all enabled tools.
         tools = self._tool_registry.get_api_schemas()
 
+        return await self._run_agent_loop(tools)
+
+    async def _run_agent_loop(self, tools: list[dict[str, typing.Any]]) -> str:
+        """
+        Run the agentic tool loop (Think -> Act -> Observe).
+        """
         max_iterations = 10
         final_content = ""
 
