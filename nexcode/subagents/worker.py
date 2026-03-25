@@ -11,13 +11,14 @@ from __future__ import annotations
 import asyncio
 import time
 import uuid
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator
-
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class SubagentConfig:
@@ -55,6 +56,7 @@ class SubagentResult:
 # ---------------------------------------------------------------------------
 # SubagentWorker
 # ---------------------------------------------------------------------------
+
 
 class SubagentWorker:
     """
@@ -111,20 +113,25 @@ class SubagentWorker:
                 duration_ms=elapsed,
             )
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             elapsed = int((time.perf_counter() - start) * 1000)
             self._status = "timeout"
             return SubagentResult(
-                id=self.config.id, name=self.config.name,
+                id=self.config.id,
+                name=self.config.name,
                 error=f"Timeout after {self.config.timeout_seconds}s",
-                steps_taken=self._current_step, duration_ms=elapsed,
+                steps_taken=self._current_step,
+                duration_ms=elapsed,
             )
         except Exception as exc:
             elapsed = int((time.perf_counter() - start) * 1000)
             self._status = "failed"
             return SubagentResult(
-                id=self.config.id, name=self.config.name,
-                error=str(exc), steps_taken=self._current_step, duration_ms=elapsed,
+                id=self.config.id,
+                name=self.config.name,
+                error=str(exc),
+                steps_taken=self._current_step,
+                duration_ms=elapsed,
             )
 
     async def _execute_loop(self) -> str:
@@ -176,8 +183,10 @@ class SubagentWorker:
                     last_response = getattr(response, "content", str(response))
                     break
 
-                # Execute tool calls.
-                for tc in tool_calls:
+                # Execute tool calls concurrently.
+                async def execute_single_tool(
+                    tc: dict[str, Any],
+                ) -> tuple[dict[str, Any], bool, str]:
                     tool_name = tc.get("name", "")
                     tool_args = tc.get("arguments", {})
                     self._tools_used.append(tool_name)
@@ -194,11 +203,29 @@ class SubagentWorker:
                             elif tool_name in ("edit_file", "search_and_replace"):
                                 self._files_modified.append(path)
 
-                        messages.append({"role": "assistant", "content": None, "tool_calls": [tc]})
-                        messages.append({"role": "tool", "content": result_text, "tool_call_id": tc.get("id", "")})
+                        return tc, True, result_text
                     else:
-                        messages.append({"role": "assistant", "content": None, "tool_calls": [tc]})
-                        messages.append({"role": "tool", "content": f"Tool '{tool_name}' not available", "tool_call_id": tc.get("id", "")})
+                        return tc, False, f"Tool '{tool_name}' not available"
+
+                tasks = [execute_single_tool(tc) for tc in tool_calls]
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+
+                for i, result in enumerate(results):
+                    tc = tool_calls[i]
+                    if isinstance(result, Exception):
+                        tool_name = tc.get("name", "unknown")
+                        result_text = f"Tool '{tool_name}' failed with error: {result}"
+                    else:
+                        _, is_available, result_text = result
+
+                    messages.append({"role": "assistant", "content": None, "tool_calls": [tc]})
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "content": result_text,
+                            "tool_call_id": tc.get("id", ""),
+                        }
+                    )
 
             except Exception as exc:
                 last_response = f"Error at step {self._current_step}: {exc}"
