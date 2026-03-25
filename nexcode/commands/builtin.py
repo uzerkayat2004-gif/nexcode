@@ -409,11 +409,18 @@ class IgnoreCommand(BaseCommand):
     async def execute(self, args: list[str], context: Any = None, **svc: Any) -> CommandResult:
         if not args:
             return CommandResult(success=False, output="Usage: /ignore .env")
+
+        path_to_ignore = args[0]
+        if "\n" in path_to_ignore or "\r" in path_to_ignore:
+            return CommandResult(success=False, output="Error: Newline characters are not allowed in ignore paths")
+        if ".." in path_to_ignore:
+            return CommandResult(success=False, output="Error: Path traversal ('..') is not allowed in ignore paths")
+
         import os
         ignore_path = os.path.join(os.getcwd(), ".nexcode-ignore")
         with open(ignore_path, "a", encoding="utf-8") as f:
-            f.write(args[0] + "\n")
-        return CommandResult(success=True, output=f"✓ Added '{args[0]}' to .nexcode-ignore")
+            f.write(path_to_ignore + "\n")
+        return CommandResult(success=True, output=f"✓ Added '{path_to_ignore}' to .nexcode-ignore")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
