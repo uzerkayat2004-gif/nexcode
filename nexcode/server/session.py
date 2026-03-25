@@ -9,14 +9,15 @@ Each session has its own ConversationHistory and NexCode engine instance.
 from __future__ import annotations
 
 import uuid
+import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from nexcode.config import NexCodeConfig, load_config
-from nexcode.history import ConversationHistory
 from nexcode.ai.auth import AuthManager
 from nexcode.ai.provider import AIProvider
+from nexcode.config import NexCodeConfig, load_config
+from nexcode.history import ConversationHistory
 from nexcode.tools.registry import ToolRegistry
 
 
@@ -27,8 +28,8 @@ class ChatSession:
     id: str = field(default_factory=lambda: uuid.uuid4().hex[:16])
     title: str = "New Chat"
     history: ConversationHistory = field(default_factory=ConversationHistory)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     message_count: int = 0
 
     def to_dict(self) -> dict[str, Any]:
@@ -143,7 +144,7 @@ class WebSessionManager:
         if session.message_count == 1 and user_input:
             session.title = user_input[:60] + ("..." if len(user_input) > 60 else "")
 
-        session.updated_at = datetime.now(timezone.utc)
+        session.updated_at = datetime.now(UTC)
         session.message_count += 1
 
         return {
