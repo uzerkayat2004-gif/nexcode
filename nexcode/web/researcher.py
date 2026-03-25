@@ -14,16 +14,14 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from rich.console import Console
-from rich.panel import Panel
-from rich.text import Text
 
 from nexcode.web.fetcher import WebFetcher
 from nexcode.web.search import SearchResult, WebSearchEngine
 
-
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class ResearchSource:
@@ -53,6 +51,7 @@ class ResearchReport:
 # ---------------------------------------------------------------------------
 # DeepResearcher
 # ---------------------------------------------------------------------------
+
 
 class DeepResearcher:
     """
@@ -115,7 +114,10 @@ class DeepResearcher:
         urls = [r.url for r in top_results]
         pages = await self.fetcher.fetch_many(urls, max_parallel=5)
 
-        fetched_count = sum(1 for p in pages if p.content)
+        fetched_count = 0
+        for p in pages:
+            if p.content:
+                fetched_count += 1
         self._log(f"✅ Fetched {fetched_count} pages")
 
         # Step 4: Extract code blocks.
@@ -142,9 +144,7 @@ class DeepResearcher:
         if not response.results:
             return "No results found."
 
-        snippets = "\n".join(
-            f"- {r.title}: {r.snippet}" for r in response.results[:5]
-        )
+        snippets = "\n".join(f"- {r.title}: {r.snippet}" for r in response.results[:5])
 
         if self.ai_provider:
             try:
@@ -198,6 +198,7 @@ class DeepResearcher:
             page = await self.fetcher.fetch(url)
             if "version" in page.content:
                 import re
+
                 match = re.search(r'"version"\s*:\s*"([^"]+)"', page.content)
                 if match:
                     return match.group(1)
@@ -226,7 +227,11 @@ class DeepResearcher:
                     system="You generate search queries. Return only queries, one per line.",
                 )
                 text = getattr(resp, "content", str(resp))
-                extra = [q.strip().strip("-").strip("0123456789.").strip() for q in text.strip().splitlines() if q.strip()]
+                extra = [
+                    q.strip().strip("-").strip("0123456789.").strip()
+                    for q in text.strip().splitlines()
+                    if q.strip()
+                ]
                 queries.extend(extra[:n])
             except Exception:
                 pass
@@ -247,13 +252,11 @@ class DeepResearcher:
     ) -> ResearchReport:
         """AI synthesis of research findings."""
         sources = [
-            ResearchSource(url=r.url, title=r.title, relevance=r.relevance_score)
-            for r in results
+            ResearchSource(url=r.url, title=r.title, relevance=r.relevance_score) for r in results
         ]
 
         content_summary = "\n\n".join(
-            f"Source: {p.title} ({p.url})\n{p.content[:2000]}"
-            for p in pages if p.content
+            f"Source: {p.title} ({p.url})\n{p.content[:2000]}" for p in pages if p.content
         )
 
         if self.ai_provider:
@@ -273,7 +276,9 @@ class DeepResearcher:
                 return ResearchReport(
                     query=query,
                     summary=text[:500],
-                    key_findings=[line.strip() for line in text.splitlines() if line.strip().startswith("-")][:5],
+                    key_findings=[
+                        line.strip() for line in text.splitlines() if line.strip().startswith("-")
+                    ][:5],
                     sources=sources,
                     confidence=0.8 if len(pages) >= 3 else 0.5,
                 )
