@@ -41,36 +41,30 @@ class SubagentManager:
 
     # ── Single subagent ────────────────────────────────────────────────────
 
-    async def spawn(
-        self,
-        instruction: str,
-        name: str | None = None,
-        allowed_tools: list[str] | None = None,
-        context: str | None = None,
-        model: str | None = None,
-        max_steps: int = 20,
-    ) -> SubagentResult:
+    async def spawn(self, config: SubagentConfig) -> SubagentResult:
         """Spawn a single subagent and wait for completion."""
-        config = SubagentConfig(
-            id=f"sub_{uuid.uuid4().hex[:8]}",
-            name=name or f"Subagent-{len(self._active) + 1}",
-            instruction=instruction,
-            allowed_tools=allowed_tools or [],
-            context=context,
-            model=model,
-            max_steps=max_steps,
+        safe_config = SubagentConfig(
+            id=config.id or f"sub_{uuid.uuid4().hex[:8]}",
+            name=config.name or f"Subagent-{len(self._active) + 1}",
+            instruction=config.instruction,
+            allowed_tools=config.allowed_tools if config.allowed_tools is not None else [],
+            context=config.context,
+            max_steps=config.max_steps or 20,
+            model=config.model,
+            provider=config.provider,
+            timeout_seconds=config.timeout_seconds
         )
 
         worker = SubagentWorker(
-            config=config,
+            config=safe_config,
             ai_provider=self.ai_provider,
             tool_registry=self.tool_registry,
             checkpoint_manager=self.checkpoint_manager,
         )
-        self._active[config.id] = worker
+        self._active[safe_config.id] = worker
 
         result = await worker.run()
-        self._active.pop(config.id, None)
+        self._active.pop(safe_config.id, None)
 
         self._show_result(result)
         return result
