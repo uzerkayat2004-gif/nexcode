@@ -9,11 +9,10 @@ Also includes task history for logging and replay.
 
 from __future__ import annotations
 
-import asyncio
 import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +22,6 @@ from nexcode.agent.context import AgentContext
 from nexcode.agent.observer import ResultObserver
 from nexcode.agent.planner import TaskPlanner
 from nexcode.agent.thinking import ThinkingDisplay
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -47,7 +45,7 @@ class AgentStep:
     tool_input: dict[str, Any] | None = None
     tool_result: Any = None
     ai_response: str | None = None
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     duration_ms: int = 0
 
 
@@ -57,7 +55,7 @@ class AgentTask:
 
     id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
     instruction: str = ""
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     status: str = "running"  # running, completed, failed, paused, aborted
     steps_taken: int = 0
     tools_used: list[str] = field(default_factory=list)

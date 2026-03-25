@@ -8,14 +8,12 @@ intent analysis, and error explanation.
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.syntax import Syntax
 from rich.text import Text
 
 

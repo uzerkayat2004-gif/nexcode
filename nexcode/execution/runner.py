@@ -11,12 +11,11 @@ from __future__ import annotations
 import asyncio
 import os
 import time
-from dataclasses import dataclass, field
 from collections.abc import AsyncIterator
+from dataclasses import dataclass
 from typing import Any
 
-from nexcode.execution.sandbox import PlatformAdapter, Sandbox, SandboxResult
-
+from nexcode.execution.sandbox import PlatformAdapter, Sandbox
 
 # ---------------------------------------------------------------------------
 # ExecutionResult
@@ -134,7 +133,7 @@ class CommandRunner:
                 stdout_bytes, stderr_bytes = await asyncio.wait_for(
                     proc.communicate(), timeout=timeout
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 proc.kill()
                 stdout_bytes, stderr_bytes = await proc.communicate()
                 timed_out = True
@@ -235,7 +234,7 @@ class CommandRunner:
                     line = await asyncio.wait_for(
                         proc.stdout.readline(), timeout=timeout
                     )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     proc.kill()
                     yield "[Timed out]\n"
                     break

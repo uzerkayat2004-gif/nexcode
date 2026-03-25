@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -77,7 +77,7 @@ class ChangelogGenerator:
             except Exception:
                 pass
 
-        date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        date = datetime.now(UTC).strftime("%Y-%m-%d")
         lines = [f"\n## [{version}] - {date}\n"]
         for c in commits:
             lines.append(f"- {c}")

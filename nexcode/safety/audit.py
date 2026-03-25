@@ -9,17 +9,13 @@ Stored as JSONL files (one per day) under ~/.nexcode/audit/.
 from __future__ import annotations
 
 import json
-import os
-import time
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from rich.console import Console
 from rich.table import Table
-from rich.text import Text
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -37,7 +33,7 @@ class AuditEntry:
     """A single entry in the audit log."""
 
     id: str = ""
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     session_id: str = ""
     tool_name: str = ""
     parameters: dict[str, Any] = field(default_factory=dict)
@@ -87,7 +83,7 @@ class AuditLog:
         if not entry.session_id:
             entry.session_id = self.session_id
 
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today = datetime.now(UTC).strftime("%Y-%m-%d")
         path = _AUDIT_DIR / f"audit_{today}.jsonl"
 
         try:
@@ -212,7 +208,7 @@ class AuditLog:
 
     def cleanup(self, keep_days: int = 30) -> int:
         """Delete audit files older than keep_days. Returns count deleted."""
-        cutoff = datetime.now(timezone.utc).timestamp() - (keep_days * 86400)
+        cutoff = datetime.now(UTC).timestamp() - (keep_days * 86400)
         deleted = 0
         for f in _AUDIT_DIR.glob("audit_*.jsonl"):
             if f.stat().st_mtime < cutoff:
@@ -222,7 +218,7 @@ class AuditLog:
 
     @property
     def total_entries_today(self) -> int:
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today = datetime.now(UTC).strftime("%Y-%m-%d")
         path = _AUDIT_DIR / f"audit_{today}.jsonl"
         if not path.exists():
             return 0

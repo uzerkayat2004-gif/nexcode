@@ -11,13 +11,12 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
-
 
 # ---------------------------------------------------------------------------
 # Risk matrix — auto-assigned risk for every tool
@@ -91,7 +90,7 @@ class PermissionRequest:
     reversible: bool = True
     affected_paths: list[str] = field(default_factory=list)
     command: str | None = None
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass
@@ -101,7 +100,7 @@ class PermissionDecision:
     granted: bool
     scope: str = "once"       # "once", "session", "always", "denied"
     reason: str | None = None
-    decided_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    decided_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 # ---------------------------------------------------------------------------

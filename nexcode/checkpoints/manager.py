@@ -9,18 +9,16 @@ supports atomic restore operations.
 
 from __future__ import annotations
 
-import hashlib
 import os
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from rich.console import Console
 
 from nexcode.checkpoints.storage import CheckpointStorage
-
 
 # ---------------------------------------------------------------------------
 # Data classes
@@ -43,7 +41,7 @@ class Checkpoint:
     """A saved checkpoint with one or more files."""
 
     id: str = ""
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     session_id: str = ""
     task_id: str | None = None
     tool_name: str = ""
@@ -112,7 +110,7 @@ class CheckpointManager:
         if isinstance(paths, str):
             paths = [paths]
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         suffix = uuid.uuid4().hex[:4]
         cp_id = f"ckpt_{now.strftime('%Y%m%d_%H%M%S')}_{suffix}"
 
@@ -342,7 +340,7 @@ class CheckpointManager:
         """Clean up old checkpoints. Returns stats."""
         result = CleanupResult()
         all_cps = self.storage.list_checkpoints()
-        cutoff = datetime.now(timezone.utc).timestamp() - (max_age_days * 86400)
+        cutoff = datetime.now(UTC).timestamp() - (max_age_days * 86400)
 
         to_delete: list[str] = []
         for cp in all_cps:
