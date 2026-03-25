@@ -11,13 +11,14 @@ from __future__ import annotations
 import asyncio
 import time
 import uuid
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator
-
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class SubagentConfig:
@@ -55,6 +56,7 @@ class SubagentResult:
 # ---------------------------------------------------------------------------
 # SubagentWorker
 # ---------------------------------------------------------------------------
+
 
 class SubagentWorker:
     """
@@ -111,30 +113,29 @@ class SubagentWorker:
                 duration_ms=elapsed,
             )
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             elapsed = int((time.perf_counter() - start) * 1000)
             self._status = "timeout"
             return SubagentResult(
-                id=self.config.id, name=self.config.name,
+                id=self.config.id,
+                name=self.config.name,
                 error=f"Timeout after {self.config.timeout_seconds}s",
-                steps_taken=self._current_step, duration_ms=elapsed,
+                steps_taken=self._current_step,
+                duration_ms=elapsed,
             )
         except Exception as exc:
             elapsed = int((time.perf_counter() - start) * 1000)
             self._status = "failed"
             return SubagentResult(
-                id=self.config.id, name=self.config.name,
-                error=str(exc), steps_taken=self._current_step, duration_ms=elapsed,
+                id=self.config.id,
+                name=self.config.name,
+                error=str(exc),
+                steps_taken=self._current_step,
+                duration_ms=elapsed,
             )
 
-    async def _execute_loop(self) -> str:
-        """Core execution loop — think → act → observe."""
-        if not self.ai_provider:
-            return "No AI provider available"
-
-        messages: list[dict[str, Any]] = []
-
-        # Build system message.
+    def _build_system_message(self) -> str:
+        """Build the system prompt for the AI provider."""
         system = (
             f"You are a focused subagent. Your task: {self.config.instruction}\n"
             "Complete the task efficiently. Use only the tools available to you.\n"
@@ -142,17 +143,62 @@ class SubagentWorker:
         )
         if self.config.context:
             system += f"\n\nContext:\n{self.config.context}"
+        return system
 
-        messages.append({"role": "user", "content": self.config.instruction})
-
-        # Get available tools.
+    def _get_tools_schema(self) -> list[dict[str, Any]]:
+        """Get the schema for the available tools."""
         tools_schema: list[dict[str, Any]] = []
         if self.tool_registry:
             all_tools = self.tool_registry.get_all()
             for name, tool in all_tools.items():
                 if not self.config.allowed_tools or name in self.config.allowed_tools:
                     tools_schema.append(tool.to_api_schema())
+        return tools_schema
 
+    async def _process_tool_calls(
+        self, tool_calls: list[Any], messages: list[dict[str, Any]]
+    ) -> None:
+        """Execute requested tools and track the results."""
+        for tc in tool_calls:
+            tool_name = tc.get("name", "")
+            tool_args = tc.get("arguments", {})
+            self._tools_used.append(tool_name)
+
+            if self.tool_registry and tool_name in self.tool_registry.get_all():
+                result = await self.tool_registry.execute(tool_name, tool_args)
+                result_text = getattr(result, "output", str(result))
+
+                # Track files.
+                path = tool_args.get("path", tool_args.get("file_path", ""))
+                if path:
+                    if tool_name in ("create_file", "write_file"):
+                        self._files_created.append(path)
+                    elif tool_name in ("edit_file", "search_and_replace"):
+                        self._files_modified.append(path)
+
+                messages.append({"role": "assistant", "content": None, "tool_calls": [tc]})
+                messages.append(
+                    {"role": "tool", "content": result_text, "tool_call_id": tc.get("id", "")}
+                )
+            else:
+                messages.append({"role": "assistant", "content": None, "tool_calls": [tc]})
+                messages.append(
+                    {
+                        "role": "tool",
+                        "content": f"Tool '{tool_name}' not available",
+                        "tool_call_id": tc.get("id", ""),
+                    }
+                )
+
+    async def _execute_loop(self) -> str:
+        """Core execution loop — think → act → observe."""
+        if not self.ai_provider:
+            return "No AI provider available"
+
+        system = self._build_system_message()
+        tools_schema = self._get_tools_schema()
+
+        messages: list[dict[str, Any]] = [{"role": "user", "content": self.config.instruction}]
         last_response = ""
 
         for step in range(self.config.max_steps):
@@ -177,28 +223,7 @@ class SubagentWorker:
                     break
 
                 # Execute tool calls.
-                for tc in tool_calls:
-                    tool_name = tc.get("name", "")
-                    tool_args = tc.get("arguments", {})
-                    self._tools_used.append(tool_name)
-
-                    if self.tool_registry and tool_name in self.tool_registry.get_all():
-                        result = await self.tool_registry.execute(tool_name, tool_args)
-                        result_text = getattr(result, "output", str(result))
-
-                        # Track files.
-                        path = tool_args.get("path", tool_args.get("file_path", ""))
-                        if path:
-                            if tool_name in ("create_file", "write_file"):
-                                self._files_created.append(path)
-                            elif tool_name in ("edit_file", "search_and_replace"):
-                                self._files_modified.append(path)
-
-                        messages.append({"role": "assistant", "content": None, "tool_calls": [tc]})
-                        messages.append({"role": "tool", "content": result_text, "tool_call_id": tc.get("id", "")})
-                    else:
-                        messages.append({"role": "assistant", "content": None, "tool_calls": [tc]})
-                        messages.append({"role": "tool", "content": f"Tool '{tool_name}' not available", "tool_call_id": tc.get("id", "")})
+                await self._process_tool_calls(tool_calls, messages)
 
             except Exception as exc:
                 last_response = f"Error at step {self._current_step}: {exc}"
