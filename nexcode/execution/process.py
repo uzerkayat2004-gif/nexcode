@@ -7,20 +7,16 @@ dev servers, file watchers, and test runners.  Provides output
 capture, status display, and graceful cleanup.
 """
 
-from __future__ import annotations
-
 import asyncio
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Any
 
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
 from nexcode.execution.runner import CommandRunner
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -33,6 +29,7 @@ _OUTPUT_BUFFER_SIZE = 1000  # lines per process
 # ProcessInfo
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ProcessInfo:
     """Live state of a managed background process."""
@@ -43,9 +40,7 @@ class ProcessInfo:
     cwd: str
     pid: int
     started_at: float
-    output_buffer: deque[str] = field(
-        default_factory=lambda: deque(maxlen=_OUTPUT_BUFFER_SIZE)
-    )
+    output_buffer: deque[str] = field(default_factory=lambda: deque(maxlen=_OUTPUT_BUFFER_SIZE))
     _reader_task: asyncio.Task[None] | None = field(default=None, repr=False)
 
     @property
@@ -70,6 +65,7 @@ class ProcessInfo:
 # ---------------------------------------------------------------------------
 # ProcessManager
 # ---------------------------------------------------------------------------
+
 
 class ProcessManager:
     """
@@ -120,9 +116,7 @@ class ProcessManager:
 
         # Start a background reader task to capture output.
         if proc and proc.stdout:
-            info._reader_task = asyncio.create_task(
-                self._read_output(process_id, proc)
-            )
+            info._reader_task = asyncio.create_task(self._read_output(process_id, proc))
 
         self._processes[process_id] = info
         return process_id
@@ -217,8 +211,7 @@ class ProcessManager:
             elapsed = info.elapsed_display
             table.add_row(info.name, info.command, status, elapsed)
             lines.append(
-                f"{info.name}: {info.command} — "
-                f"{'running' if running else 'stopped'} ({elapsed})"
+                f"{info.name}: {info.command} — {'running' if running else 'stopped'} ({elapsed})"
             )
 
         console.print()
