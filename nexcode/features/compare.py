@@ -6,18 +6,13 @@ Run the same prompt on multiple models simultaneously,
 AI-judge the results, and display side-by-side.
 """
 
-from __future__ import annotations
-
 import asyncio
 import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from rich.columns import Columns
 from rich.console import Console
-from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
 
 
 @dataclass
