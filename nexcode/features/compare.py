@@ -13,11 +13,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from rich.columns import Columns
 from rich.console import Console
-from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
 
 
 @dataclass
@@ -105,7 +102,7 @@ class ModelComparator:
 
     def show_comparison(self, result: ComparisonResult) -> None:
         """Show side-by-side comparison."""
-        table = Table(title=f" ⚖️  Model Comparison ", border_style="cyan", show_lines=True)
+        table = Table(title=" ⚖️  Model Comparison ", border_style="cyan", show_lines=True)
         for r in result.responses:
             table.add_column(r.model, style="white", max_width=40)
 
