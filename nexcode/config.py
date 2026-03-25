@@ -23,7 +23,6 @@ else:
 
 import tomli_w
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -111,11 +110,28 @@ def _find_config_paths() -> list[Path]:
     return paths
 
 
+# Cache to avoid synchronous I/O on repeated config loads unless the file has changed.
+# Maps path -> (mtime, parsed_dict)
+_CONFIG_CACHE: dict[Path, tuple[float, dict[str, Any]]] = {}
+
 def _parse_toml(path: Path) -> dict[str, Any]:
     """Read and parse a TOML file, returning an empty dict on failure."""
     try:
+        mtime = path.stat().st_mtime
+    except OSError:
+        # If the file was deleted or cannot be stated, return empty and clear cache.
+        _CONFIG_CACHE.pop(path, None)
+        return {}
+
+    cached = _CONFIG_CACHE.get(path)
+    if cached is not None and cached[0] == mtime:
+        return cached[1]
+
+    try:
         with open(path, "rb") as fh:
-            return tomllib.load(fh)
+            data = tomllib.load(fh)
+            _CONFIG_CACHE[path] = (mtime, data)
+            return data
     except Exception as exc:
         # Non-fatal: bad config should not crash the app on startup.
         import warnings
