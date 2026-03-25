@@ -13,11 +13,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from rich.columns import Columns
 from rich.console import Console
-from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
 
 
 @dataclass
@@ -50,7 +47,9 @@ class BenchmarkResult:
 class ModelComparator:
     """Run same prompt on multiple models and compare."""
 
-    def __init__(self, ai_providers: dict[str, Any] | None = None, console: Console | None = None) -> None:
+    def __init__(
+        self, ai_providers: dict[str, Any] | None = None, console: Console | None = None
+    ) -> None:
         self.providers = ai_providers or {}
         self.console = console or Console()
 
@@ -69,7 +68,9 @@ class ModelComparator:
         async def _query(provider_name: str, model_name: str) -> ModelResponse:
             provider = self.providers.get(provider_name)
             if not provider:
-                return ModelResponse(provider=provider_name, model=model_name, response="Provider not available")
+                return ModelResponse(
+                    provider=provider_name, model=model_name, response="Provider not available"
+                )
             start = time.perf_counter()
             try:
                 resp = await provider.chat(
@@ -80,11 +81,16 @@ class ModelComparator:
                 text = getattr(resp, "content", str(resp))
                 tokens = getattr(resp, "usage", {}).get("total_tokens", len(text) // 4)
                 return ModelResponse(
-                    provider=provider_name, model=model_name,
-                    response=text, tokens_used=tokens, duration_ms=elapsed,
+                    provider=provider_name,
+                    model=model_name,
+                    response=text,
+                    tokens_used=tokens,
+                    duration_ms=elapsed,
                 )
             except Exception as e:
-                return ModelResponse(provider=provider_name, model=model_name, response=f"Error: {e}")
+                return ModelResponse(
+                    provider=provider_name, model=model_name, response=f"Error: {e}"
+                )
 
         tasks = [_query(p, m) for p, m in models]
         result.responses = await asyncio.gather(*tasks)
@@ -99,18 +105,24 @@ class ModelComparator:
         comparison = await self.compare(task, models)
         ranked = sorted(comparison.responses, key=lambda r: r.quality_score or 0, reverse=True)
         return BenchmarkResult(
-            task=task, results=ranked,
+            task=task,
+            results=ranked,
             rankings=[f"{r.model} ({r.quality_score or 0:.0f})" for r in ranked],
         )
 
     def show_comparison(self, result: ComparisonResult) -> None:
         """Show side-by-side comparison."""
-        table = Table(title=f" ⚖️  Model Comparison ", border_style="cyan", show_lines=True)
+        table = Table(title=" ⚖️  Model Comparison ", border_style="cyan", show_lines=True)
         for r in result.responses:
             table.add_column(r.model, style="white", max_width=40)
 
         # Response row.
-        table.add_row(*[r.response[:200] + "..." if len(r.response) > 200 else r.response for r in result.responses])
+        table.add_row(
+            *[
+                r.response[:200] + "..." if len(r.response) > 200 else r.response
+                for r in result.responses
+            ]
+        )
 
         # Stats row.
         stats = []
@@ -147,7 +159,7 @@ class ModelComparator:
             return
         try:
             responses_text = "\n\n".join(
-                f"Model {i+1} ({r.model}):\n{r.response[:1000]}"
+                f"Model {i + 1} ({r.model}):\n{r.response[:1000]}"
                 for i, r in enumerate(result.responses)
             )
             prompt = (
