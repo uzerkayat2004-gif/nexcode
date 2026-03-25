@@ -14,19 +14,18 @@ import re
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
-
 
 # ---------------------------------------------------------------------------
 # SandboxResult
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class SandboxResult:
     """Result of a sandbox safety check."""
 
     allowed: bool
-    risk_level: str            # "safe", "warn", "blocked"
+    risk_level: str  # "safe", "warn", "blocked"
     reason: str | None = None
     suggested_safe_alternative: str | None = None
 
@@ -37,44 +36,45 @@ class SandboxResult:
 
 # Commands that are ALWAYS blocked — catastrophic, irreversible.
 ALWAYS_BLOCKED: list[tuple[str, str]] = [
-    (r"rm\s+-rf\s+/\s*$",           "Deleting root filesystem"),
-    (r"rm\s+-rf\s+/\*",             "Deleting root filesystem"),
-    (r"rm\s+-rf\s+~/?$",            "Deleting home directory"),
-    (r"rm\s+-rf\s+\$HOME",          "Deleting home directory"),
-    (r"mkfs\.",                      "Formatting disk"),
-    (r"dd\s+.*of=/dev/",            "Writing to raw disk device"),
-    (r"chmod\s+-R\s+777\s+/\s*$",   "Unrestricting root permissions"),
-    (r":\(\)\{\s*:\|:&\s*\};:",     "Fork bomb"),
-    (r"curl\s+.*\|\s*s(h|udo)",     "Piping remote content to shell"),
-    (r"wget\s+.*\|\s*s(h|udo)",     "Piping remote content to shell"),
-    (r">\s*/dev/sda",               "Overwriting disk device"),
-    (r"mv\s+/\s+/dev/null",         "Moving root to null device"),
+    (r"rm\s+-rf\s+/\s*$", "Deleting root filesystem"),
+    (r"rm\s+-rf\s+/\*", "Deleting root filesystem"),
+    (r"rm\s+-rf\s+~/?$", "Deleting home directory"),
+    (r"rm\s+-rf\s+\$HOME", "Deleting home directory"),
+    (r"mkfs\.", "Formatting disk"),
+    (r"dd\s+.*of=/dev/", "Writing to raw disk device"),
+    (r"chmod\s+-R\s+777\s+/\s*$", "Unrestricting root permissions"),
+    (r":\(\)\{\s*:\|:&\s*\};:", "Fork bomb"),
+    (r"curl\s+.*\|\s*s(h|udo)", "Piping remote content to shell"),
+    (r"wget\s+.*\|\s*s(h|udo)", "Piping remote content to shell"),
+    (r">\s*/dev/sda", "Overwriting disk device"),
+    (r"mv\s+/\s+/dev/null", "Moving root to null device"),
 ]
 
 # Commands that trigger a warning — risky but sometimes intended.
 WARN_BEFORE: list[tuple[str, str]] = [
-    (r"rm\s+-rf\b",                  "Recursive force delete"),
-    (r"rm\s+-r\b",                   "Recursive delete"),
-    (r"DROP\s+TABLE",                "SQL table drop"),
-    (r"DROP\s+DATABASE",             "SQL database drop"),
-    (r"TRUNCATE\s+TABLE",            "SQL table truncation"),
-    (r"git\s+push\s+--force",        "Git force push"),
-    (r"git\s+push\s+-f\b",          "Git force push"),
-    (r"git\s+reset\s+--hard",        "Git hard reset"),
-    (r"git\s+clean\s+-fd",           "Git clean force"),
-    (r"npm\s+publish",               "Publishing to npm"),
-    (r"pip\s+install\b",             "Installing Python packages"),
-    (r"npm\s+install\s+-g",          "Global npm install"),
-    (r"sudo\b",                      "Elevated privileges"),
-    (r"chmod\s+-R\b",                "Recursive permission change"),
-    (r"chown\s+-R\b",               "Recursive ownership change"),
-    (r"docker\s+system\s+prune",     "Docker system cleanup"),
+    (r"rm\s+-rf\b", "Recursive force delete"),
+    (r"rm\s+-r\b", "Recursive delete"),
+    (r"DROP\s+TABLE", "SQL table drop"),
+    (r"DROP\s+DATABASE", "SQL database drop"),
+    (r"TRUNCATE\s+TABLE", "SQL table truncation"),
+    (r"git\s+push\s+--force", "Git force push"),
+    (r"git\s+push\s+-f\b", "Git force push"),
+    (r"git\s+reset\s+--hard", "Git hard reset"),
+    (r"git\s+clean\s+-fd", "Git clean force"),
+    (r"npm\s+publish", "Publishing to npm"),
+    (r"pip\s+install\b", "Installing Python packages"),
+    (r"npm\s+install\s+-g", "Global npm install"),
+    (r"sudo\b", "Elevated privileges"),
+    (r"chmod\s+-R\b", "Recursive permission change"),
+    (r"chown\s+-R\b", "Recursive ownership change"),
+    (r"docker\s+system\s+prune", "Docker system cleanup"),
 ]
 
 
 # ---------------------------------------------------------------------------
 # PlatformAdapter — cross-platform shell compatibility
 # ---------------------------------------------------------------------------
+
 
 class PlatformAdapter:
     """Cross-platform shell and path adaptation."""
@@ -117,11 +117,8 @@ class PlatformAdapter:
         """Detect if running inside WSL on Windows."""
         if platform.system() != "Linux":
             return False
-        try:
-            with open("/proc/version", "r") as f:
-                return "microsoft" in f.read().lower()
-        except OSError:
-            return False
+        release = platform.release().lower()
+        return "microsoft" in release or "wsl" in release
 
     @staticmethod
     def get_system_info() -> dict[str, str]:
@@ -138,6 +135,7 @@ class PlatformAdapter:
 # ---------------------------------------------------------------------------
 # Sandbox
 # ---------------------------------------------------------------------------
+
 
 class Sandbox:
     """
@@ -215,6 +213,7 @@ class Sandbox:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _suggest_alternative(command: str) -> str | None:
     """Suggest a safer alternative for a blocked command."""
