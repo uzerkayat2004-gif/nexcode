@@ -166,7 +166,7 @@ class TaskCoordinator:
         if not can_par or not self.manager:
             # Run as single task.
             if self.manager:
-                result = await self.manager.spawn(instruction)
+                result = await self.manager.spawn(SubagentConfig(instruction=instruction))
                 return CoordinatorResult(
                     instruction=instruction,
                     parallelized=False,
