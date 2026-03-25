@@ -89,39 +89,8 @@ class DeepResearcher:
         queries = await self._expand_queries(query, depth)
         self._log(f"✅ Generated {len(queries)} search queries")
 
-        # Step 2: Run all queries in parallel.
-        all_results: list[SearchResult] = []
-        search_tasks = [self.search.search(q, max_results=10, search_type=focus) for q in queries]
-        responses = await asyncio.gather(*search_tasks, return_exceptions=True)
-
-        for resp in responses:
-            if hasattr(resp, "results"):
-                all_results.extend(resp.results)
-
-        # Dedup by URL.
-        seen: set[str] = set()
-        unique: list[SearchResult] = []
-        for r in all_results:
-            if r.url not in seen:
-                seen.add(r.url)
-                unique.append(r)
-
-        self._log(f"✅ Found {len(unique)} results across all queries")
-
-        # Step 3: Rank and fetch top pages.
-        top_n = {"quick": 2, "normal": 5, "deep": 8}.get(depth, 5)
-        top_results = unique[:top_n]
-
-        urls = [r.url for r in top_results]
-        pages = await self.fetcher.fetch_many(urls, max_parallel=5)
-
-        fetched_count = sum(1 for p in pages if p.content)
-        self._log(f"✅ Fetched {fetched_count} pages")
-
-        # Step 4: Extract code blocks.
-        code_examples: list[str] = []
-        for page in pages:
-            code_examples.extend(page.code_blocks[:3])
+        # Step 2: Fetch and prepare data.
+        top_results, pages, code_examples = await self._fetch_data(queries, depth, focus)
 
         # Step 5: AI synthesis.
         self._log("🔄 Synthesizing findings...")
@@ -206,6 +175,46 @@ class DeepResearcher:
         return None
 
     # ── Internal ───────────────────────────────────────────────────────────
+
+    async def _fetch_data(
+        self, queries: list[str], depth: str, focus: str
+    ) -> tuple[list[SearchResult], list[Any], list[str]]:
+        """Run searches, dedup, fetch top pages, and extract code blocks."""
+        # Step 2: Run all queries in parallel.
+        all_results: list[SearchResult] = []
+        search_tasks = [self.search.search(q, max_results=10, search_type=focus) for q in queries]
+        responses = await asyncio.gather(*search_tasks, return_exceptions=True)
+
+        for resp in responses:
+            if hasattr(resp, "results"):
+                all_results.extend(resp.results)
+
+        # Dedup by URL.
+        seen: set[str] = set()
+        unique: list[SearchResult] = []
+        for r in all_results:
+            if r.url not in seen:
+                seen.add(r.url)
+                unique.append(r)
+
+        self._log(f"✅ Found {len(unique)} results across all queries")
+
+        # Step 3: Rank and fetch top pages.
+        top_n = {"quick": 2, "normal": 5, "deep": 8}.get(depth, 5)
+        top_results = unique[:top_n]
+
+        urls = [r.url for r in top_results]
+        pages = await self.fetcher.fetch_many(urls, max_parallel=5)
+
+        fetched_count = sum(1 for p in pages if p.content)
+        self._log(f"✅ Fetched {fetched_count} pages")
+
+        # Step 4: Extract code blocks.
+        code_examples: list[str] = []
+        for page in pages:
+            code_examples.extend(page.code_blocks[:3])
+
+        return top_results, pages, code_examples
 
     async def _expand_queries(self, query: str, depth: str) -> list[str]:
         """Generate multiple search queries from the original."""
