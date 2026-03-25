@@ -8,6 +8,7 @@ Supports hierarchical resolution: defaults → user config → project config �
 
 from __future__ import annotations
 
+import asyncio
 import os
 import sys
 from dataclasses import dataclass, field
@@ -23,10 +24,12 @@ else:
 
 import tomli_w
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
+
+_CONFIG_LOCK = asyncio.Lock()
+
 
 DEFAULT_MODEL: str = "claude-opus-4-6"
 DEFAULT_PROVIDER: str = "anthropic"
@@ -229,3 +232,20 @@ def save_config(config: NexCodeConfig, path: Path | None = None) -> Path:
         tomli_w.dump(data, fh)
 
     return path
+
+
+async def save_config_async(config: NexCodeConfig, path: Path | None = None) -> Path:
+    """
+    Serialize the current config to a TOML file asynchronously.
+    Uses asyncio.to_thread to offload file I/O to a worker thread and a
+    module-level lock to prevent race conditions during concurrent writes.
+
+    Args:
+        config: The config object to save.
+        path: Destination path. Defaults to ``~/.nexcode.toml``.
+
+    Returns:
+        The path the config was written to.
+    """
+    async with _CONFIG_LOCK:
+        return await asyncio.to_thread(save_config, config, path)
