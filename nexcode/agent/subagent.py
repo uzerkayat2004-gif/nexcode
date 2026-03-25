@@ -259,12 +259,16 @@ class SubagentManager:
             # Process tool calls.
             messages.append({"role": "assistant", "content": response.content, "tool_calls": tool_calls})
 
-            for tc in tool_calls:
+            async def _run_tool(tc: Any) -> tuple[Any, str, dict[str, Any], str, Any]:
                 tool_name = getattr(tc, "name", "") or tc.get("name", "")
                 tool_input = getattr(tc, "input", {}) or tc.get("input", {})
                 tool_id = getattr(tc, "id", "") or tc.get("id", "")
-
                 result = await self.tool_registry.execute(tool_name, tool_input)
+                return tc, tool_name, tool_input, tool_id, result
+
+            tool_results = await asyncio.gather(*(_run_tool(tc) for tc in tool_calls))
+
+            for tc, tool_name, tool_input, tool_id, result in tool_results:
                 steps_taken += 1
 
                 # Track file modifications.
