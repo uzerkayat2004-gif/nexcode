@@ -46,14 +46,18 @@ class AgentPool:
         """Pre-warm the pool with ready workers."""
         for i in range(self.size):
             worker = self._create_worker(f"pool-worker-{i + 1}")
-            await self._pool.put(worker)
+            self._pool.put_nowait(worker)
         self._initialized = True
 
     async def shutdown(self) -> None:
         """Shutdown all workers in the pool."""
+        workers = []
         while not self._pool.empty():
-            worker = await self._pool.get()
-            await worker.abort()
+            workers.append(self._pool.get_nowait())
+
+        if workers:
+            await asyncio.gather(*(worker.abort() for worker in workers))
+
         self._initialized = False
 
     # ── Acquire / Release ──────────────────────────────────────────────────
