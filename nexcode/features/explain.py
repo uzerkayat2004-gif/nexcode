@@ -8,14 +8,12 @@ intent analysis, and error explanation.
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.syntax import Syntax
 from rich.text import Text
 
 
@@ -60,7 +58,9 @@ class CodeExplainer:
         }
 
         if not self.ai:
-            return Explanation(summary=f"Code has {len(code.splitlines())} lines", detailed=code[:500])
+            return Explanation(
+                summary=f"Code has {len(code.splitlines())} lines", detailed=code[:500]
+            )
 
         try:
             prompt = (
@@ -94,7 +94,12 @@ class CodeExplainer:
 
         try:
             resp = await self.ai.chat(
-                messages=[{"role": "user", "content": f"Trace the data flow in this code:\n\n{code[:5000]}"}],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Trace the data flow in this code:\n\n{code[:5000]}",
+                    }
+                ],
                 system="Explain how data flows through the code, from input to output.",
             )
             return getattr(resp, "content", "")
@@ -113,9 +118,14 @@ class CodeExplainer:
 
         try:
             resp = await self.ai.chat(
-                messages=[{"role": "user", "content": (
-                    f"Explain the INTENT behind this code — why was it written this way?\n\n{code[:5000]}"
-                )}],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Explain the INTENT behind this code — why was it written this way?\n\n{code[:5000]}"
+                        ),
+                    }
+                ],
                 system="You analyze code intent and design decisions. Explain the 'why', not the 'what'.",
             )
             return getattr(resp, "content", "")
@@ -134,13 +144,20 @@ class CodeExplainer:
 
         try:
             resp = await self.ai.chat(
-                messages=[{"role": "user", "content": (
-                    f"Generate an ASCII {diagram_type} diagram for this code:\n\n{code[:4000]}"
-                )}],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Generate an ASCII {diagram_type} diagram for this code:\n\n{code[:4000]}"
+                        ),
+                    }
+                ],
                 system="Generate clean ASCII diagrams. Use box-drawing characters.",
             )
             diagram = getattr(resp, "content", "")
-            self.console.print(Panel(diagram, title=f" 📊 {diagram_type.title()} Diagram ", border_style="cyan"))
+            self.console.print(
+                Panel(diagram, title=f" 📊 {diagram_type.title()} Diagram ", border_style="cyan")
+            )
             return diagram
         except Exception:
             return "Diagram generation failed"
@@ -150,7 +167,9 @@ class CodeExplainer:
         context = ""
         if context_file:
             try:
-                context = f"\n\nRelated code:\n{Path(context_file).read_text(encoding='utf-8')[:3000]}"
+                context = (
+                    f"\n\nRelated code:\n{Path(context_file).read_text(encoding='utf-8')[:3000]}"
+                )
             except (OSError, UnicodeDecodeError):
                 pass
 
@@ -159,7 +178,12 @@ class CodeExplainer:
 
         try:
             resp = await self.ai.chat(
-                messages=[{"role": "user", "content": f"Explain this error and how to fix it:\n\n{error}{context}"}],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Explain this error and how to fix it:\n\n{error}{context}",
+                    }
+                ],
                 system="You explain errors clearly. Include: what it means, why it happened, how to fix it.",
             )
             return getattr(resp, "content", "")
@@ -172,7 +196,12 @@ class CodeExplainer:
             return "AI provider needed"
         try:
             resp = await self.ai.chat(
-                messages=[{"role": "user", "content": f"Explain this diff in plain English:\n\n{diff[:5000]}"}],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Explain this diff in plain English:\n\n{diff[:5000]}",
+                    }
+                ],
                 system="Explain code diffs clearly. Say what changed and why it matters.",
             )
             return getattr(resp, "content", "")
@@ -186,7 +215,9 @@ class CodeExplainer:
         commit_text = "\n".join(str(c)[:100] for c in commits[:20])
         try:
             resp = await self.ai.chat(
-                messages=[{"role": "user", "content": f"Summarize this commit history:\n\n{commit_text}"}],
+                messages=[
+                    {"role": "user", "content": f"Summarize this commit history:\n\n{commit_text}"}
+                ],
                 system="Summarize git history into a narrative. What was the dev working on?",
             )
             return getattr(resp, "content", "")
@@ -204,12 +235,27 @@ class CodeExplainer:
         if explanation.diagram:
             body.append(f"\n\n{explanation.diagram}", style="dim")
 
-        self.console.print(Panel(body, title=" 💡 Explanation ", border_style="yellow", padding=(0, 1)))
+        self.console.print(
+            Panel(body, title=" 💡 Explanation ", border_style="yellow", padding=(0, 1))
+        )
 
     def _extract_concepts(self, text: str) -> list[str]:
         keywords = [
-            "recursion", "async", "generator", "decorator", "closure", "inheritance",
-            "polymorphism", "memoization", "caching", "middleware", "ORM", "REST",
-            "dependency injection", "factory pattern", "observer pattern", "singleton",
+            "recursion",
+            "async",
+            "generator",
+            "decorator",
+            "closure",
+            "inheritance",
+            "polymorphism",
+            "memoization",
+            "caching",
+            "middleware",
+            "ORM",
+            "REST",
+            "dependency injection",
+            "factory pattern",
+            "observer pattern",
+            "singleton",
         ]
         return [k for k in keywords if k.lower() in text.lower()][:5]
