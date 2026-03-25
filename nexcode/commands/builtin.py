@@ -18,6 +18,7 @@ from nexcode.commands.base import BaseCommand, CommandResult
 # SESSION COMMANDS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class ClearCommand(BaseCommand):
     name = "clear"
     aliases = ["cls", "c"]
@@ -28,7 +29,9 @@ class ClearCommand(BaseCommand):
     async def execute(self, args: list[str], context: Any = None, **svc: Any) -> CommandResult:
         if context:
             context.clear()
-        return CommandResult(success=True, output="✓ Conversation cleared. Memory preserved.", clear_screen=True)
+        return CommandResult(
+            success=True, output="✓ Conversation cleared. Memory preserved.", clear_screen=True
+        )
 
 
 class CompactCommand(BaseCommand):
@@ -46,7 +49,10 @@ class CompactCommand(BaseCommand):
         msg = await context.compact(ai)
         after = context.get_token_count()
         saved = ((before - after) / max(before, 1)) * 100
-        return CommandResult(success=True, output=f"Context compacted: {before:,} → {after:,} tokens ({saved:.0f}% saved)")
+        return CommandResult(
+            success=True,
+            output=f"Context compacted: {before:,} → {after:,} tokens ({saved:.0f}% saved)",
+        )
 
 
 class SaveCommand(BaseCommand):
@@ -95,6 +101,7 @@ class HistoryCommand(BaseCommand):
 
     async def execute(self, args: list[str], context: Any = None, **svc: Any) -> CommandResult:
         from nexcode.agent.loop import TaskHistory
+
         TaskHistory.show(svc.get("console"))
         return CommandResult(success=True)
 
@@ -109,6 +116,7 @@ class UndoCommand(BaseCommand):
     async def execute(self, args: list[str], context: Any = None, **svc: Any) -> CommandResult:
         try:
             from nexcode.tools.base import CheckpointManager
+
             cm = CheckpointManager()
             checkpoints = cm._checkpoints
             if not checkpoints:
@@ -131,6 +139,7 @@ class RewindCommand(BaseCommand):
         steps = int(args[0]) if args else 1
         try:
             from nexcode.tools.base import CheckpointManager
+
             cm = CheckpointManager()
             restored = 0
             for _ in range(steps):
@@ -147,6 +156,7 @@ class RewindCommand(BaseCommand):
 # ═══════════════════════════════════════════════════════════════════════════
 # MODEL COMMANDS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class ModelCommand(BaseCommand):
     name = "model"
@@ -166,10 +176,11 @@ class ModelCommand(BaseCommand):
             ai.current_model = new_model
             # Persist to config
             from nexcode.config import save_config
+
             if hasattr(ai, "config"):
                 ai.config.default_model = new_model
                 save_config(ai.config)
-                
+
         return CommandResult(success=True, output=f"✓ Switched to: {new_model}")
 
 
@@ -185,12 +196,13 @@ class ProviderCommand(BaseCommand):
         if not args:
             provider = getattr(ai, "current_provider", "unknown") if ai else "unknown"
             return CommandResult(success=True, output=f"Current provider: {provider}")
-        
+
         new_provider = args[0]
         if ai and hasattr(ai, "current_provider"):
             ai.current_provider = new_provider
             # Persist to config
             from nexcode.config import save_config
+
             if hasattr(ai, "config"):
                 ai.config.default_provider = new_provider
                 save_config(ai.config)
@@ -207,6 +219,7 @@ class ModelsCommand(BaseCommand):
     async def execute(self, args: list[str], context: Any = None, **svc: Any) -> CommandResult:
         try:
             from nexcode.ai.models import ModelRegistry
+
             registry = ModelRegistry()
             registry.show_models(Console())
         except Exception:
@@ -228,12 +241,15 @@ class TokensCommand(BaseCommand):
         pct = context.get_usage_percent()
         msgs = context.message_count
         bar = context.get_usage_display()
-        return CommandResult(success=True, output=f"Context: {count:,} tokens ({pct:.0f}%) {bar}\nMessages: {msgs}")
+        return CommandResult(
+            success=True, output=f"Context: {count:,} tokens ({pct:.0f}%) {bar}\nMessages: {msgs}"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # AUTH COMMANDS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class LoginCommand(BaseCommand):
     name = "login"
@@ -245,7 +261,9 @@ class LoginCommand(BaseCommand):
     async def execute(self, args: list[str], context: Any = None, **svc: Any) -> CommandResult:
         if not args:
             return CommandResult(success=True, output="Usage: /login google")
-        return CommandResult(success=True, output=f"OAuth login for '{args[0]}' — use the browser window that opens.")
+        return CommandResult(
+            success=True, output=f"OAuth login for '{args[0]}' — use the browser window that opens."
+        )
 
 
 class LogoutCommand(BaseCommand):
@@ -276,6 +294,7 @@ class AuthCommand(BaseCommand):
 
         # Fallback: build a quick status table from env vars.
         from nexcode.ai.auth import AuthManager, ENV_KEY_MAP
+
         am = AuthManager()
         am.show_auth_status(Console())
         return CommandResult(success=True)
@@ -302,37 +321,49 @@ class ApiKeyCommand(BaseCommand):
 
         # 2. Persist to .nexcode.toml so it survives restarts.
         import os
+        import asyncio
         from pathlib import Path
+
         toml_path = Path(os.getcwd()) / ".nexcode.toml"
         try:
             import tomli, tomli_w
+
             existing: dict = {}
             if toml_path.exists():
-                existing = tomli.loads(toml_path.read_text(encoding="utf-8"))
+                content = await asyncio.to_thread(toml_path.read_text, encoding="utf-8")
+                existing = tomli.loads(content)
             if "api_keys" not in existing:
                 existing["api_keys"] = {}
             existing["api_keys"][provider] = key
-            toml_path.write_text(tomli_w.dumps(existing), encoding="utf-8")
+
+            toml_dump = tomli_w.dumps(existing)
+            await asyncio.to_thread(toml_path.write_text, toml_dump, encoding="utf-8")
         except Exception:
             # Fallback: append manually if tomli unavailable.
             try:
-                with open(toml_path, "a", encoding="utf-8") as f:
-                    f.write(f"\n[api_keys]\n{provider} = \"{key}\"\n")
+                import aiofiles
+
+                async with aiofiles.open(toml_path, "a", encoding="utf-8") as f:
+                    await f.write(f'\n[api_keys]\n{provider} = "{key}"\n')
             except OSError:
                 pass
 
         # 3. Also set in environment so litellm picks it up this session.
         from nexcode.ai.auth import ENV_KEY_MAP
+
         env_var = ENV_KEY_MAP.get(provider)
         if env_var:
             os.environ[env_var] = key
 
-        return CommandResult(success=True, output=f"✓ API key set for {provider} (saved to .nexcode.toml)")
+        return CommandResult(
+            success=True, output=f"✓ API key set for {provider} (saved to .nexcode.toml)"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # SAFETY COMMANDS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class ModeCommand(BaseCommand):
     name = "mode"
@@ -348,10 +379,16 @@ class ModeCommand(BaseCommand):
             return CommandResult(success=True, output=f"Current mode: {mode}")
         new_mode = args[0].lower()
         if new_mode not in ("ask", "auto", "strict", "yolo"):
-            return CommandResult(success=False, output=f"Invalid mode: {new_mode}. Use ask/auto/strict/yolo")
+            return CommandResult(
+                success=False, output=f"Invalid mode: {new_mode}. Use ask/auto/strict/yolo"
+            )
         if guardian:
             guardian.permissions.mode = new_mode
-        warning = "\n⚠️  YOLO mode: ALL safety prompts disabled. You are on your own." if new_mode == "yolo" else ""
+        warning = (
+            "\n⚠️  YOLO mode: ALL safety prompts disabled. You are on your own."
+            if new_mode == "yolo"
+            else ""
+        )
         return CommandResult(success=True, output=f"✓ Mode switched to: {new_mode}{warning}")
 
 
@@ -410,6 +447,7 @@ class IgnoreCommand(BaseCommand):
         if not args:
             return CommandResult(success=False, output="Usage: /ignore .env")
         import os
+
         ignore_path = os.path.join(os.getcwd(), ".nexcode-ignore")
         with open(ignore_path, "a", encoding="utf-8") as f:
             f.write(args[0] + "\n")
@@ -419,6 +457,7 @@ class IgnoreCommand(BaseCommand):
 # ═══════════════════════════════════════════════════════════════════════════
 # TOOL COMMANDS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class ToolsCommand(BaseCommand):
     name = "tools"
@@ -449,16 +488,22 @@ class RunCommand(BaseCommand):
             return CommandResult(success=False, output="Usage: /run npm install")
         command = " ".join(args)
         import asyncio, subprocess
+
         try:
             proc = await asyncio.create_subprocess_shell(
-                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
             stdout, stderr = await proc.communicate()
             output = stdout.decode(errors="replace")
             if stderr:
                 output += "\n" + stderr.decode(errors="replace")
             icon = "✅" if proc.returncode == 0 else "❌"
-            return CommandResult(success=proc.returncode == 0, output=f"{icon} Exit {proc.returncode}\n{output[:2000]}")
+            return CommandResult(
+                success=proc.returncode == 0,
+                output=f"{icon} Exit {proc.returncode}\n{output[:2000]}",
+            )
         except Exception as e:
             return CommandResult(success=False, output=f"Failed: {e}")
 
@@ -473,12 +518,15 @@ class WebCommand(BaseCommand):
     async def execute(self, args: list[str], context: Any = None, **svc: Any) -> CommandResult:
         if not args:
             return CommandResult(success=False, output="Usage: /web latest React 19 features")
-        return CommandResult(success=True, output=f"Web search: {' '.join(args)} (not yet implemented)")
+        return CommandResult(
+            success=True, output=f"Web search: {' '.join(args)} (not yet implemented)"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # GIT COMMANDS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class GitCommand(BaseCommand):
     name = "git"
@@ -492,6 +540,7 @@ class GitCommand(BaseCommand):
             return CommandResult(success=True, output="Usage: /git status|diff|log|branch")
         try:
             from nexcode.git.engine import GitEngine
+
             engine = GitEngine()
             sub = args[0].lower()
             if sub == "status":
@@ -509,6 +558,7 @@ class GitCommand(BaseCommand):
                 return CommandResult(success=True, output=diff[:2000] if diff else "No changes")
             elif sub == "log":
                 from nexcode.git.history import CommitHistory
+
                 ch = CommitHistory(engine)
                 ch.show_log(limit=10)
                 return CommandResult(success=True)
@@ -532,11 +582,14 @@ class CommitCommand(BaseCommand):
     async def execute(self, args: list[str], context: Any = None, **svc: Any) -> CommandResult:
         try:
             from nexcode.git.engine import GitEngine
+
             engine = GitEngine()
             engine.stage_all()
             message = " ".join(args) if args else "Update files"
             commit = engine.commit(message)
-            return CommandResult(success=True, output=f"✓ Committed: [{commit.short_hash}] {commit.message}")
+            return CommandResult(
+                success=True, output=f"✓ Committed: [{commit.short_hash}] {commit.message}"
+            )
         except Exception as e:
             return CommandResult(success=False, output=f"Commit failed: {e}")
 
@@ -544,6 +597,7 @@ class CommitCommand(BaseCommand):
 # ═══════════════════════════════════════════════════════════════════════════
 # SYSTEM COMMANDS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class HelpCommand(BaseCommand):
     name = "help"
@@ -577,7 +631,9 @@ class HelpCommand(BaseCommand):
                 body.append(f"    /{cmd.name:<14}", style="cyan")
                 body.append(f"{cmd.description}\n", style="dim")
 
-        console.print(Panel(body, title=" NexCode Commands ", title_align="left", border_style="cyan"))
+        console.print(
+            Panel(body, title=" NexCode Commands ", title_align="left", border_style="cyan")
+        )
         return CommandResult(success=True)
 
 
@@ -608,6 +664,7 @@ class ThemeCommand(BaseCommand):
         tm = svc.get("theme_manager")
         if not tm:
             from nexcode.ui.themes import ThemeManager
+
             tm = ThemeManager()
 
         if not args:
@@ -629,11 +686,15 @@ class VersionCommand(BaseCommand):
 
     async def execute(self, args: list[str], context: Any = None, **svc: Any) -> CommandResult:
         import platform, sys
-        return CommandResult(success=True, output=(
-            f"NexCode v1.0.0\n"
-            f"Python {sys.version.split()[0]}\n"
-            f"OS: {platform.system()} {platform.release()}"
-        ))
+
+        return CommandResult(
+            success=True,
+            output=(
+                f"NexCode v1.0.0\n"
+                f"Python {sys.version.split()[0]}\n"
+                f"OS: {platform.system()} {platform.release()}"
+            ),
+        )
 
 
 class AboutCommand(BaseCommand):
@@ -644,11 +705,14 @@ class AboutCommand(BaseCommand):
     category = "system"
 
     async def execute(self, args: list[str], context: Any = None, **svc: Any) -> CommandResult:
-        return CommandResult(success=True, output=(
-            "NexCode — Professional AI Coding Assistant\n"
-            "Better than Claude Code · Multi-provider · Full terminal UI\n"
-            "Built with Python, Rich, and ❤️"
-        ))
+        return CommandResult(
+            success=True,
+            output=(
+                "NexCode — Professional AI Coding Assistant\n"
+                "Better than Claude Code · Multi-provider · Full terminal UI\n"
+                "Built with Python, Rich, and ❤️"
+            ),
+        )
 
 
 class ExitCommand(BaseCommand):
@@ -726,6 +790,7 @@ class ProjectCommand(BaseCommand):
         if not pmm:
             return CommandResult(success=True, output="Project memory not initialized")
         import os
+
         pm = pmm.load_or_create(os.getcwd())
         if args and args[0] == "scan":
             pmm._detect_stack(pm)
@@ -749,12 +814,15 @@ class SessionCommand(BaseCommand):
             return CommandResult(success=True, output="Session manager not initialized")
         if not args:
             if session:
-                return CommandResult(success=True, output=(
-                    f"Session: {session.id}\n"
-                    f"Duration: {session.duration_display}\n"
-                    f"Tasks: {session.tasks_completed}\n"
-                    f"Cost: ${session.cost_usd:.4f}"
-                ))
+                return CommandResult(
+                    success=True,
+                    output=(
+                        f"Session: {session.id}\n"
+                        f"Duration: {session.duration_display}\n"
+                        f"Tasks: {session.tasks_completed}\n"
+                        f"Cost: ${session.cost_usd:.4f}"
+                    ),
+                )
             return CommandResult(success=True, output="No active session")
         sub = args[0].lower()
         if sub == "list":
@@ -774,19 +842,44 @@ class SessionCommand(BaseCommand):
 
 ALL_COMMANDS: list[type[BaseCommand]] = [
     # Session
-    ClearCommand, CompactCommand, SaveCommand, LoadCommand,
-    HistoryCommand, UndoCommand, RewindCommand,
-    MemoryCommand, ProjectCommand, SessionCommand,
+    ClearCommand,
+    CompactCommand,
+    SaveCommand,
+    LoadCommand,
+    HistoryCommand,
+    UndoCommand,
+    RewindCommand,
+    MemoryCommand,
+    ProjectCommand,
+    SessionCommand,
     # Model
-    ModelCommand, ProviderCommand, ModelsCommand, TokensCommand,
+    ModelCommand,
+    ProviderCommand,
+    ModelsCommand,
+    TokensCommand,
     # Auth
-    LoginCommand, LogoutCommand, AuthCommand, ApiKeyCommand,
+    LoginCommand,
+    LogoutCommand,
+    AuthCommand,
+    ApiKeyCommand,
     # Safety
-    ModeCommand, SafetyCommand, AuditCommand, PermissionsCommand, IgnoreCommand,
+    ModeCommand,
+    SafetyCommand,
+    AuditCommand,
+    PermissionsCommand,
+    IgnoreCommand,
     # Tools
-    ToolsCommand, RunCommand, WebCommand,
+    ToolsCommand,
+    RunCommand,
+    WebCommand,
     # Git
-    GitCommand, CommitCommand,
+    GitCommand,
+    CommitCommand,
     # System
-    HelpCommand, ConfigCommand, ThemeCommand, VersionCommand, AboutCommand, ExitCommand,
+    HelpCommand,
+    ConfigCommand,
+    ThemeCommand,
+    VersionCommand,
+    AboutCommand,
+    ExitCommand,
 ]
