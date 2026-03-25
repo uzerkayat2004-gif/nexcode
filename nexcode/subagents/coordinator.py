@@ -13,12 +13,10 @@ from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.table import Table
 from rich.text import Text
 
 from nexcode.subagents.manager import SubagentManager
 from nexcode.subagents.worker import SubagentConfig, SubagentResult
-
 
 # ---------------------------------------------------------------------------
 # Data classes
@@ -95,6 +93,38 @@ class TaskCoordinator:
 
     # ── Decompose ──────────────────────────────────────────────────────────
 
+    def _single_task(self, instruction: str) -> list[SubagentConfig]:
+        """Return a single fallback task configuration."""
+        return [
+            SubagentConfig(
+                id=f"sub_{uuid.uuid4().hex[:8]}",
+                name="Main Task",
+                instruction=instruction,
+            )
+        ]
+
+    def _parse_tasks(self, text: str, context: str, instruction: str) -> list[SubagentConfig]:
+        """Parse AI response text into subagent configurations."""
+        configs: list[SubagentConfig] = []
+        for line in text.strip().splitlines():
+            line = line.strip()
+            if ":" not in line:
+                continue
+            parts = line.split(":", 1)
+            name = parts[0].strip().strip("-").strip("0123456789.").strip()
+            instr = parts[1].strip()
+            if name and instr:
+                configs.append(
+                    SubagentConfig(
+                        id=f"sub_{uuid.uuid4().hex[:8]}",
+                        name=name[:30],
+                        instruction=instr,
+                        context=context,
+                        max_steps=20,
+                    )
+                )
+        return configs if configs else self._single_task(instruction)
+
     async def decompose(
         self,
         instruction: str,
@@ -103,11 +133,7 @@ class TaskCoordinator:
         """Break a complex task into parallel subtask configurations."""
         if not self.ai_provider:
             # Can't decompose without AI — return single task.
-            return [SubagentConfig(
-                id=f"sub_{uuid.uuid4().hex[:8]}",
-                name="Main Task",
-                instruction=instruction,
-            )]
+            return self._single_task(instruction)
 
         try:
             prompt = (
@@ -122,36 +148,10 @@ class TaskCoordinator:
                 system="You decompose tasks into parallel subtasks. Return only NAME: instruction lines.",
             )
             text = getattr(resp, "content", str(resp))
-
-            configs: list[SubagentConfig] = []
-            for line in text.strip().splitlines():
-                line = line.strip()
-                if ":" not in line:
-                    continue
-                parts = line.split(":", 1)
-                name = parts[0].strip().strip("-").strip("0123456789.").strip()
-                instr = parts[1].strip()
-                if name and instr:
-                    configs.append(SubagentConfig(
-                        id=f"sub_{uuid.uuid4().hex[:8]}",
-                        name=name[:30],
-                        instruction=instr,
-                        context=context,
-                        max_steps=20,
-                    ))
-
-            return configs if configs else [SubagentConfig(
-                id=f"sub_{uuid.uuid4().hex[:8]}",
-                name="Main Task",
-                instruction=instruction,
-            )]
+            return self._parse_tasks(text, context, instruction)
 
         except Exception:
-            return [SubagentConfig(
-                id=f"sub_{uuid.uuid4().hex[:8]}",
-                name="Main Task",
-                instruction=instruction,
-            )]
+            return self._single_task(instruction)
 
     # ── Smart run ──────────────────────────────────────────────────────────
 

@@ -16,9 +16,7 @@ from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.table import Table
 from rich.text import Text
-
 
 # ---------------------------------------------------------------------------
 # Data classes
@@ -169,7 +167,8 @@ class CodeReviewer:
 
     async def review_pr(self, pr_number: int) -> ReviewReport:
         """Review a PR (requires gh CLI)."""
-        import asyncio, subprocess
+        import asyncio
+        import subprocess
         try:
             proc = await asyncio.create_subprocess_shell(
                 f"gh pr diff {pr_number}", stdout=subprocess.PIPE, stderr=subprocess.PIPE,

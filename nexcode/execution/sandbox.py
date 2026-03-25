@@ -14,8 +14,6 @@ import re
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
-
 
 # ---------------------------------------------------------------------------
 # SandboxResult
@@ -118,7 +116,7 @@ class PlatformAdapter:
         if platform.system() != "Linux":
             return False
         try:
-            with open("/proc/version", "r") as f:
+            with open("/proc/version") as f:
                 return "microsoft" in f.read().lower()
         except OSError:
             return False

@@ -9,14 +9,12 @@ push, pull, log, branch, stash, reset, restore, tag, blame.
 
 from __future__ import annotations
 
-import os
 from typing import Any
 
-from nexcode.git.engine import GitEngine, GitError
 from nexcode.git.diff import DiffDisplay
+from nexcode.git.engine import GitEngine, GitError
 from nexcode.git.history import CommitHistory
 from nexcode.tools.base import BaseTool, ToolResult
-
 
 # ---------------------------------------------------------------------------
 # Shared lazy-init

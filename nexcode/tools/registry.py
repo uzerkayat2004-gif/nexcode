@@ -54,25 +54,7 @@ class ToolRegistry:
             ReadFileTool,
             WriteFileTool,
         )
-        # Search tools.
-        from nexcode.tools.search_tools import (
-            FindFilesTool,
-            ReadManyFilesTool,
-            SearchAndReplaceTool,
-            SearchTextTool,
-        )
-        # Shell tools.
-        from nexcode.tools.shell_tools import (
-            GetProcessOutputTool,
-            InstallDependenciesTool,
-            RunCommandTool,
-            RunScriptTool,
-            RunTestsTool,
-            SetEnvironmentTool,
-            StartBackgroundProcessTool,
-            StopBackgroundProcessTool,
-            WhichTool,
-        )
+
         # Git tools.
         from nexcode.tools.git_tools import (
             GitBlameTool,
@@ -90,6 +72,28 @@ class ToolRegistry:
             GitStatusTool,
             GitUnstageTool,
         )
+
+        # Search tools.
+        from nexcode.tools.search_tools import (
+            FindFilesTool,
+            ReadManyFilesTool,
+            SearchAndReplaceTool,
+            SearchTextTool,
+        )
+
+        # Shell tools.
+        from nexcode.tools.shell_tools import (
+            GetProcessOutputTool,
+            InstallDependenciesTool,
+            RunCommandTool,
+            RunScriptTool,
+            RunTestsTool,
+            SetEnvironmentTool,
+            StartBackgroundProcessTool,
+            StopBackgroundProcessTool,
+            WhichTool,
+        )
+
         # Web tools.
         from nexcode.tools.web_tools import (
             CheckUrlTool,

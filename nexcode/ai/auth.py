@@ -18,19 +18,18 @@ import secrets
 import time
 import webbrowser
 from dataclasses import dataclass
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from threading import Thread
 from typing import Any
-from urllib.parse import urlencode, urlparse, parse_qs
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import httpx
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-from nexcode.ai.models import MODEL_REGISTRY, list_models_for_provider
-
+from nexcode.ai.models import list_models_for_provider
 
 # ---------------------------------------------------------------------------
 # Constants

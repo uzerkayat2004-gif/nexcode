@@ -11,10 +11,9 @@ from __future__ import annotations
 import json
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -132,7 +131,7 @@ class MemoryStore:
     def export_backup(self, output_path: str) -> None:
         """Export all data as a single JSON backup file."""
         backup: dict[str, Any] = {
-            "exported_at": datetime.now(timezone.utc).isoformat(),
+            "exported_at": datetime.now(UTC).isoformat(),
             "data": {},
         }
 

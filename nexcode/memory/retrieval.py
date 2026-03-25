@@ -10,12 +10,10 @@ scoring and builds a context string for the system prompt.
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
 
 from nexcode.memory.long_term import LongTermMemory, Memory
 from nexcode.memory.project import ProjectMemoryManager
-
 
 # ---------------------------------------------------------------------------
 # MemoryRetrieval
@@ -137,7 +135,7 @@ class MemoryRetrieval:
         score += memory.importance * 0.2
 
         # 4. Recency (more recent = more relevant).
-        age_days = (datetime.now(timezone.utc) - memory.last_used).total_seconds() / 86400
+        age_days = (datetime.now(UTC) - memory.last_used).total_seconds() / 86400
         recency = max(0, 1 - (age_days / 30))  # decays over 30 days
         score += recency * 0.1
 

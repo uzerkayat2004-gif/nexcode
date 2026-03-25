@@ -9,7 +9,7 @@ endpoints for browser-based access.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -20,7 +20,6 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from nexcode.server.session import WebSessionManager
-
 
 # ---------------------------------------------------------------------------
 # Pydantic models
@@ -180,7 +179,7 @@ def create_app() -> FastAPI:
                         "..." if len(user_input) > 60 else ""
                     )
 
-                session.updated_at = datetime.now(timezone.utc)
+                session.updated_at = datetime.now(UTC)
                 session.message_count += 1
 
                 await ws.send_json({
@@ -326,6 +325,7 @@ def create_app() -> FastAPI:
     @app.post("/api/settings/apikey")
     async def set_api_key(req: ApiKeyRequest):
         import os
+
         from nexcode.config import save_config
 
         manager.config.api_keys[req.provider] = req.key
@@ -345,6 +345,7 @@ def create_app() -> FastAPI:
     @app.delete("/api/settings/apikey/{provider}")
     async def delete_api_key(provider: str):
         import os
+
         from nexcode.config import save_config
 
         if provider in manager.config.api_keys:
@@ -402,7 +403,8 @@ def create_app() -> FastAPI:
 
         if provider == "google":
             from nexcode.ai.auth import (
-                GOOGLE_CLIENT_ID, GOOGLE_AUTH_URI,
+                GOOGLE_AUTH_URI,
+                GOOGLE_CLIENT_ID,
                 GOOGLE_SCOPES,
             )
 
@@ -427,10 +429,13 @@ def create_app() -> FastAPI:
             return {"url": auth_url, "provider": "google"}
 
         elif provider == "github":
-            from nexcode.ai.auth import (
-                GITHUB_CLIENT_ID, GITHUB_DEVICE_CODE_URL, GITHUB_SCOPES,
-            )
             import httpx
+
+            from nexcode.ai.auth import (
+                GITHUB_CLIENT_ID,
+                GITHUB_DEVICE_CODE_URL,
+                GITHUB_SCOPES,
+            )
 
             # GitHub uses Device Flow — request device + user codes
             async with httpx.AsyncClient() as client:
@@ -479,9 +484,13 @@ def create_app() -> FastAPI:
 
         # Exchange code for tokens
         import time
+
         import httpx
+
         from nexcode.ai.auth import (
-            GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_TOKEN_URI,
+            GOOGLE_CLIENT_ID,
+            GOOGLE_CLIENT_SECRET,
+            GOOGLE_TOKEN_URI,
             OAuthToken,
         )
 
@@ -542,6 +551,7 @@ def create_app() -> FastAPI:
     async def github_oauth_poll(device_code: str = ""):
         """Poll GitHub for the device flow token."""
         import httpx
+
         from nexcode.ai.auth import GITHUB_CLIENT_ID, GITHUB_TOKEN_URL, OAuthToken
 
         async with httpx.AsyncClient() as client:

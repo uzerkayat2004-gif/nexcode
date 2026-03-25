@@ -11,9 +11,9 @@ from __future__ import annotations
 import asyncio
 import time
 import uuid
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator
-
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Data classes
@@ -111,7 +111,7 @@ class SubagentWorker:
                 duration_ms=elapsed,
             )
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             elapsed = int((time.perf_counter() - start) * 1000)
             self._status = "timeout"
             return SubagentResult(

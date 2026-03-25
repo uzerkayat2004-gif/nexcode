@@ -9,7 +9,6 @@ for switching at runtime.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel

@@ -15,7 +15,6 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
-
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
@@ -158,7 +157,7 @@ class TaskPlanner:
         # Footer with stats.
         risk_color = {"low": "green", "medium": "yellow", "high": "red"}.get(plan.risk_level, "white")
         footer = Text()
-        footer.append(f"  Risk: ", style="dim")
+        footer.append("  Risk: ", style="dim")
         footer.append(plan.risk_level.capitalize(), style=risk_color)
         footer.append(f"  │  ~{plan.estimated_tool_calls} tool calls", style="dim")
         if plan.files_to_modify:

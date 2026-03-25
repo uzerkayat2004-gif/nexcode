@@ -14,12 +14,9 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from rich.console import Console
-from rich.panel import Panel
-from rich.text import Text
 
 from nexcode.web.fetcher import WebFetcher
 from nexcode.web.search import SearchResult, WebSearchEngine
-
 
 # ---------------------------------------------------------------------------
 # Data classes
