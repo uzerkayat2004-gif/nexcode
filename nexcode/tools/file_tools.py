@@ -10,25 +10,19 @@ Every tool extends ``BaseTool`` and returns a ``ToolResult``.
 
 from __future__ import annotations
 
+import asyncio
 import mimetypes
-import os
 import shutil
-import stat
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
-from rich.console import Console
-from rich.tree import Tree
 
 from nexcode.tools.base import (
     BaseTool,
     CheckpointManager,
     ToolResult,
     generate_diff_string,
-    show_diff,
 )
-
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -48,15 +42,47 @@ def _get_checkpoint() -> CheckpointManager:
     return _checkpoint
 
 
-def _is_binary(path: Path) -> bool:
-    """Heuristic check for binary files."""
+# Common extensions that are safe to treat as text.
+_TEXT_EXTENSIONS = {
+    ".txt", ".py", ".js", ".html", ".css", ".json", ".md", ".csv", ".xml", ".yml", ".yaml",
+    ".ini", ".cfg", ".toml", ".sh", ".bat", ".ps1", ".c", ".cpp", ".h", ".hpp", ".java",
+    ".rb", ".php", ".go", ".rs", ".ts", ".jsx", ".tsx", ".sql", ".graphql", ".vue", ".svelte"
+}
+
+
+def _check_io_sync(path: Path) -> bool:
+    """Synchronous fallback to read the first 1024 bytes to check for nulls."""
     try:
         with open(path, "rb") as f:
-            chunk = f.read(8192)
-        # Files with null bytes are likely binary.
+            chunk = f.read(1024)
         return b"\x00" in chunk
     except OSError:
         return False
+
+
+async def _is_binary(path: Path) -> bool:
+    """Heuristic check for binary files using fast path + async IO."""
+    ext = path.suffix.lower()
+    if ext in _TEXT_EXTENSIONS:
+        return False
+
+    mime, _ = mimetypes.guess_type(str(path))
+    if mime:
+        if mime.startswith("text/"):
+            return False
+        if mime.startswith(("image/", "audio/", "video/")):
+            return True
+        if mime.startswith("application/") and mime not in (
+            "application/json",
+            "application/javascript",
+            "application/xml",
+            "application/x-sh",
+            "application/x-httpd-php",
+        ):
+            return True
+
+    # Fallback to I/O in a thread to avoid blocking the event loop.
+    return await asyncio.to_thread(_check_io_sync, path)
 
 
 def _read_text_safe(path: Path) -> str:
@@ -82,10 +108,9 @@ def _gitignore_patterns(root: Path) -> list[str]:
     gitignore = root / ".gitignore"
     if gitignore.is_file():
         try:
-            import pathspec
             text = gitignore.read_text(encoding="utf-8", errors="replace")
             return text.splitlines()
-        except ImportError:
+        except OSError:
             pass
     return []
 
@@ -154,7 +179,7 @@ class ReadFileTool(BaseTool):
             return ToolResult.fail(f"File not found: {path}")
 
         # Binary file detection.
-        if _is_binary(path):
+        if await _is_binary(path):
             mime = mimetypes.guess_type(str(path))[0] or "unknown"
             size = _human_size(path.stat().st_size)
             return ToolResult.ok(
@@ -338,7 +363,10 @@ class EditFileTool(BaseTool):
         new_lines = new_string.count("\n") + 1
 
         return ToolResult.ok(
-            output=f"Edited {path.name}: replaced {old_lines} line(s) with {new_lines} line(s)\n\n{diff_str}",
+            output=(
+                f"Edited {path.name}: replaced {old_lines} line(s) with "
+                f"{new_lines} line(s)\n\n{diff_str}"
+            ),
             display=f"Edited {path.name} ({old_lines} → {new_lines} lines)",
             old_lines=old_lines,
             new_lines=new_lines,
@@ -429,7 +457,7 @@ class DeleteFileTool(BaseTool):
         trash_dir = Path.cwd() / ".nexcode_trash"
         trash_dir.mkdir(parents=True, exist_ok=True)
 
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         trash_name = f"{timestamp}_{path.name}"
         trash_path = trash_dir / trash_name
 
@@ -669,11 +697,11 @@ class FileInfoTool(BaseTool):
 
         st = path.stat()
         size = _human_size(st.st_size)
-        modified = datetime.fromtimestamp(st.st_mtime, tz=timezone.utc).isoformat()
-        created = datetime.fromtimestamp(st.st_ctime, tz=timezone.utc).isoformat()
+        modified = datetime.fromtimestamp(st.st_mtime, tz=UTC).isoformat()
+        created = datetime.fromtimestamp(st.st_ctime, tz=UTC).isoformat()
 
         mime = mimetypes.guess_type(str(path))[0] or "unknown"
-        is_bin = _is_binary(path) if path.is_file() else False
+        is_bin = await _is_binary(path) if path.is_file() else False
 
         info_lines = [
             f"Path:      {path}",
