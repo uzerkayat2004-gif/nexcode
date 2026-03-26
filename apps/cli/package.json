@@ -1,0 +1,36 @@
+{
+  "name": "@nexcode/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "nexcode": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "dev": "bun run src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@nexcode/shared": "workspace:*",
+    "@nexcode/db": "workspace:*",
+    "commander": "^13.0.0",
+    "ink": "^5.1.0",
+    "react": "^19.0.0",
+    "chalk": "^5.4.0",
+    "ora": "^8.2.0",
+    "inquirer": "^12.3.0",
+    "open": "^10.1.0",
+    "jsonwebtoken": "^9.0.0",
+    "crypto-js": "^4.2.0",
+    "conf": "^13.1.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/react": "^19.0.0",
+    "@types/jsonwebtoken": "^9.0.0",
+    "@types/crypto-js": "^4.2.0"
+  }
+}

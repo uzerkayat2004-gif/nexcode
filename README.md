@@ -1,79 +1,115 @@
 # NexCode
 
-> A powerful, production-grade AI coding assistant for the terminal — inspired by Claude Code, built to go further.
+**AI-powered coding assistant — Claude Code for everyone, with every model.**
+
+NexCode is an open, multi-provider agentic coding CLI and web app. It's model-agnostic — plug in your own API key from any supported provider and use any model you want.
 
 ## Features
 
-- 🤖 **Multi-provider AI** — Claude, GPT, Gemini, and more via LiteLLM
-- 🎨 **Beautiful terminal UI** — Rich-powered colored output, panels, and spinners
-- 🔧 **Extensible tool system** — File editing, shell commands, search, and custom tools
-- 📝 **Session memory** — Persistent conversation history across sessions
-- ⚙️ **Flexible config** — TOML-based configuration with sensible defaults
-- 🔒 **Permission modes** — Ask, auto, or strict permission control for tool use
+- 🤖 **Multi-Provider**: OpenAI, Anthropic, Google, Mistral, Groq, Ollama, and more
+- 🔐 **Secure Auth**: OAuth with Google, GitHub, magic email, or API key
+- 💻 **CLI + Web**: Use in terminal (React Ink) or browser (Monaco Editor)
+- 🔒 **Encrypted**: API keys encrypted with AES-256-GCM
 
-## Quick Start
+## Tech Stack
+
+### CLI (`apps/cli`)
+- Runtime: Bun
+- Framework: Commander.js + React Ink
+- Auth: Device flow + API key
+
+### Web (`apps/web`)
+- Framework: Next.js 15 (App Router) + TypeScript
+- Auth: NextAuth.js v5
+- API: tRPC v11
+- UI: Tailwind CSS v4 + shadcn/ui
+- Database: PostgreSQL via Neon + Drizzle ORM
+
+### Shared Packages
+- `@nexcode/shared` — Types, schemas, utilities
+- `@nexcode/db` — Drizzle schema + migrations
+- `@nexcode/ui` — Shared UI primitives
+
+## Getting Started
 
 ### Prerequisites
-
-- Python 3.11+
-- [uv](https://docs.astral.sh/uv/) (recommended) or pip
+- [Bun](https://bun.sh) 1.0+
+- PostgreSQL database (or [Neon](https://neon.tech) account)
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone <repo-url>
+# Clone the repo
+git clone https://github.com/uzerkayat2004-gif/nexcode.git
 cd nexcode
 
-# Install with uv
-uv sync
+# Install dependencies
+bun install
 
-# Run NexCode
-uv run python main.py
+# Copy environment variables
+cp .env.example .env
+# Edit .env with your credentials
+
+# Build all packages
+bun run build
 ```
 
-### Configuration
-
-Copy and customize the default config:
+### Development
 
 ```bash
-cp .nexcode.toml ~/.nexcode.toml
+# Start all apps in dev mode
+bun run dev
+
+# Or start individually
+bun run dev --filter=@nexcode/web
+bun run dev --filter=@nexcode/cli
 ```
 
-Set your API key:
-
-```toml
-[api_keys]
-anthropic = "sk-ant-..."
-```
-
-Or via environment variable:
+### CLI Usage
 
 ```bash
-export ANTHROPIC_API_KEY="sk-ant-..."
+# Authenticate
+nexcode auth login
+
+# Or with API key
+nexcode auth login --api-key nxc_sk_xxxxxxxx
+
+# Check auth status
+nexcode auth status
+
+# Start chat
+nexcode chat
+
+# Configure
+nexcode config set defaultProvider openai
+nexcode config set defaultModel gpt-4o
 ```
 
 ## Project Structure
 
 ```
 nexcode/
-├── main.py                  # CLI entry point
-├── pyproject.toml           # Project config & dependencies
-├── .nexcode.toml            # Default user config
-├── nexcode/
-│   ├── app.py               # Main app orchestrator
-│   ├── config.py            # Config loader & manager
-│   ├── display.py           # Rich terminal UI
-│   ├── history.py           # Conversation history
-│   ├── ai/
-│   │   └── provider.py      # AI provider abstraction
-│   ├── tools/
-│   │   └── registry.py      # Tool registry
-│   ├── memory/
-│   │   └── session.py       # Session manager
-│   └── utils/
-│       └── helpers.py       # Shared utilities
+├── apps/
+│   ├── cli/           # Terminal CLI (React Ink + Bun)
+│   └── web/           # Next.js web dashboard
+├── packages/
+│   ├── shared/        # Types, schemas, utilities
+│   ├── db/            # Drizzle schema + migrations
+│   └── ui/            # Shared UI primitives
+├── turbo.json         # Turborepo config
+└── package.json       # Root workspace
 ```
+
+## Authentication
+
+NexCode supports multiple auth methods:
+
+1. **Google OAuth** — Sign in with Google
+2. **GitHub OAuth** — Sign in with GitHub
+3. **Magic Email** — Passwordless sign in via email
+4. **API Key** — For headless/CI usage
+
+All credentials are encrypted with AES-256-GCM and stored in `~/.nexcode/auth.json`.
 
 ## License
 
